@@ -3,7 +3,7 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 
-from adlab_planning.space.parking_lot import ParkingLot
+from space.parking_lot import ParkingLot
 
 class Pose:
     def __init__(self, x, y, theta):

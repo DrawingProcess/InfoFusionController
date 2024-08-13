@@ -2,7 +2,7 @@ import math
 import random
 import numpy as np
 import matplotlib.pyplot as plt
-from adlab_planning.space.parking_lot import ParkingLot
+from space.parking_lot import ParkingLot
 
 class Pose:
     def __init__(self, x, y, theta):
@@ -17,7 +17,7 @@ class Node:
         self.cost = cost
         self.parent = parent
 
-class InformedRRTStar:
+class InformedTRRTStar:
     def __init__(self, start, goal, parking_lot, max_iter=300, search_radius=10, show_eclipse=False):
         self.start = Node(start.x, start.y, 0.0)
         self.goal = Node(goal.x, goal.y, 0.0)
@@ -193,23 +193,33 @@ class ThetaStar:
     def is_collision_free(self, node1, node2):
         x1, y1 = node1.x, node1.y
         x2, y2 = node2.x, node2.y
+        
+        # Ensure the segment is within the parking lot boundaries
+        if not (0 <= x1 <= self.parking_lot.lot_width and 0 <= y1 <= self.parking_lot.lot_height and 
+                0 <= x2 <= self.parking_lot.lot_width and 0 <= y2 <= self.parking_lot.lot_height):
+            return False
+        
         # Use a high-resolution check along the line segment
         num_checks = int(math.hypot(x2 - x1, y2 - y1) * 10)
         for i in range(num_checks):
             t = i / num_checks
             x = x1 + t * (x2 - x1)
             y = y1 + t * (y2 - y1)
-            if not self.parking_lot.is_not_crossed_obstacle((round(x), round(y)), (round(x), round(y))):
+            # Ensure the point is within the parking lot and not on an obstacle
+            if not self.parking_lot.is_not_crossed_obstacle((round(x1), round(y1)), (round(x), round(y))):
                 return False
         return True
 
     def optimize_path(self, path):
         optimized_path = [path[0]]
         for i in range(1, len(path) - 1):
-            if not self.is_collision_free(path[i-1], path[i+1]):
+            if not self.is_collision_free(optimized_path[-1], path[i+1]):
+                # If the segment from previous node to next node is not collision-free, add the current node to the path
                 optimized_path.append(path[i])
         optimized_path.append(path[-1])
         return optimized_path
+
+
 
 def main():
     parking_lot = ParkingLot()
@@ -232,7 +242,7 @@ def main():
     plt.grid(True)
     plt.axis("equal")
 
-    informed_rrt_star = InformedRRTStar(start_pose, goal_pose, parking_lot, show_eclipse=False)
+    informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, parking_lot, show_eclipse=False)
     rx_rrt, ry_rrt, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=True)
 
     # Plot Informed RRT* Path
