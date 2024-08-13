@@ -1,9 +1,4 @@
-"""
-ParkingLot for Free Space Route Planner
-"""
-
 import matplotlib.pyplot as plt
-
 
 class ParkingLot:
     def __init__(self):
@@ -13,38 +8,51 @@ class ParkingLot:
         self.obstacles = []
         self.obstacle_lines = []
 
-        # 주차장 외각
+        self.create_outer_walls()
+        self.create_horizontal_lines()
+        self.create_vertical_lines()
+
+    def create_outer_walls(self):
+        # Create the boundary walls of the parking lot
         for x in range(self.lot_width + 1):
             self.obstacles.append((x, 0))
             self.obstacles.append((x, self.lot_height))
         for y in range(1, self.lot_height):
             self.obstacles.append((0, y))
             self.obstacles.append((self.lot_width, y))
-        self.obstacle_lines = [
+        self.obstacle_lines.extend([
             [(0, 0), (0, self.lot_height)],
             [(0, 0), (self.lot_width, 0)],
             [(self.lot_width, 0), (self.lot_width, self.lot_height)],
             [(0, self.lot_height), (self.lot_width, self.lot_height)],
-        ]
+        ])
 
-        # 주차장 가로선
+    def create_horizontal_lines(self):
+        # Create horizontal lines within the parking lot
         for x in range(11, self.lot_width - 10):
             self.obstacles.append((x, 17))
             self.obstacles.append((x, 40))
-        self.obstacle_lines.append([(11, 17), (self.lot_width - 10, 17)])
-        self.obstacle_lines.append([(11, 40), (self.lot_width - 10, 40)])
+        self.obstacle_lines.extend([
+            [(11, 17), (self.lot_width - 10, 17)],
+            [(11, 40), (self.lot_width - 10, 40)],
+        ])
 
-        # 주차장 세로선
+    def create_vertical_lines(self):
+        # Create vertical lines within the parking lot
         for x in range(16):
             for y in range(6):
-                self.obstacles.append((x * 4 + 11, y + 11))
-                self.obstacles.append((x * 4 + 11, y + 18))
-                self.obstacles.append((x * 4 + 11, y + 34))
-                self.obstacles.append((x * 4 + 11, y + 41))
-                self.obstacles.append((x * 4 + 11, y + 57))
-            self.obstacle_lines.append([(x * 4 + 11, 11), (x * 4 + 11, 24)])
-            self.obstacle_lines.append([(x * 4 + 11, 34), (x * 4 + 11, 47)])
-            self.obstacle_lines.append([(x * 4 + 11, 57), (x * 4 + 11, 63)])
+                self.obstacles.extend([
+                    (x * 4 + 11, y + 11),
+                    (x * 4 + 11, y + 18),
+                    (x * 4 + 11, y + 34),
+                    (x * 4 + 11, y + 41),
+                    (x * 4 + 11, y + 57),
+                ])
+            self.obstacle_lines.extend([
+                [(x * 4 + 11, 11), (x * 4 + 11, 24)],
+                [(x * 4 + 11, 34), (x * 4 + 11, 47)],
+                [(x * 4 + 11, 57), (x * 4 + 11, 63)],
+            ])
 
     def get_grid_index(self, x, y):
         return x + y * self.lot_width
@@ -63,8 +71,6 @@ class ParkingLot:
                 and not is_cross_line
         )
 
-    # Imitation Code: https://stackoverflow.com/a/9997374
-    # Return true if line segments AB and CD intersect
     def intersect(self, line1, line2):
         A = line1[0]
         B = line1[1]
