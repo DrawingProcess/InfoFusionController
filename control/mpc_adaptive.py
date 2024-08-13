@@ -6,19 +6,21 @@ from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
 from utils import calculate_angle, transform_arrays_with_angles
 
 class AdaptiveMPCController:
-    def __init__(self, horizon, dt, parking_lot):
+    def __init__(self, horizon, dt, parking_lot, wheelbase):
         self.horizon = horizon
         self.dt = dt
         self.parking_lot = parking_lot
+        self.wheelbase = wheelbase  # Wheelbase of the vehicle
         self.previous_control = None
 
     def predict(self, state, control_input):
         x, y, theta, v = state
         v_ref, delta_ref = control_input
 
+        # Update the state using the kinematic bicycle model
         x += v * np.cos(theta) * self.dt
         y += v * np.sin(theta) * self.dt
-        theta += v * np.tan(delta_ref) / 2.0 * self.dt
+        theta += v / self.wheelbase * np.tan(delta_ref) * self.dt
         v += v_ref * self.dt
 
         return np.array([x, y, theta, v])
@@ -148,7 +150,8 @@ def main():
     plt.plot(rx_opt, ry_opt, "-r", label="Optimized Path")  # Red solid line
 
     # Adaptive MPC Controller
-    adaptive_mpc = AdaptiveMPCController(horizon=10, dt=0.1, parking_lot=parking_lot)
+    wheelbase = 2.5  # Example wheelbase of the vehicle in meters
+    adaptive_mpc = AdaptiveMPCController(horizon=10, dt=0.1, parking_lot=parking_lot, wheelbase=wheelbase)
 
     # Follow the trajectory using the Adaptive MPC controller
     trajectory = adaptive_mpc.follow_trajectory(start_pose, ref_trajectory)

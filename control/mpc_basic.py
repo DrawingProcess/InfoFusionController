@@ -4,20 +4,21 @@ import matplotlib.pyplot as plt
 from space.parking_lot import ParkingLot
 from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
 from utils import calculate_angle, transform_arrays_with_angles
-
 class MPCController:
-    def __init__(self, horizon, dt, parking_lot):
+    def __init__(self, horizon, dt, parking_lot, wheelbase):
         self.horizon = horizon
         self.dt = dt
         self.parking_lot = parking_lot
+        self.wheelbase = wheelbase  # Wheelbase of the vehicle
 
     def predict(self, state, control_input):
         x, y, theta, v = state
         v_ref, delta_ref = control_input
 
+        # Update the state using the kinematic bicycle model
         x += v * np.cos(theta) * self.dt
         y += v * np.sin(theta) * self.dt
-        theta += v * np.tan(delta_ref) / 2.0 * self.dt
+        theta += v / self.wheelbase * np.tan(delta_ref) * self.dt
         v += v_ref * self.dt
 
         return np.array([x, y, theta, v])
@@ -86,6 +87,7 @@ class MPCController:
 
         return np.array(trajectory)
 
+
 def main():
     parking_lot = ParkingLot()
     obstacle_x = [obstacle[0] for obstacle in parking_lot.obstacles]
@@ -106,9 +108,6 @@ def main():
     plt.ylabel("Y [m]")
     plt.grid(True)
     plt.axis("equal")
-
-    # # Generate a reference trajectory using Informed RRT* (simulated here)
-    # ref_trajectory = np.array([[start_pose.x + (goal_pose.x - start_pose.x) * t, start_pose.y + (goal_pose.y - start_pose.y) * t, goal_pose.theta, 1.0] for t in np.linspace(0, 1, 50)])
 
     # Create Informed TRRT* planner
     informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, parking_lot, show_eclipse=False)
@@ -131,7 +130,8 @@ def main():
     plt.plot(rx_opt, ry_opt, "-r", label="Optimized Path")  # Red solid line
 
     # MPC Controller
-    mpc_controller = MPCController(horizon=10, dt=0.1, parking_lot=parking_lot)
+    wheelbase = 2.5  # Example wheelbase of the vehicle in meters
+    mpc_controller = MPCController(horizon=10, dt=0.1, parking_lot=parking_lot, wheelbase=wheelbase)
 
     # Follow the trajectory using the MPC controller
     trajectory = mpc_controller.follow_trajectory(start_pose, ref_trajectory)
