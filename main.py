@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot as plt
 
 from space.parking_lot import ParkingLot
-from adlab_planning.route_planner.informed_rrt_star_smooth_planner import Pose, InformedTRRTStar
+from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
 from control.mpc_adaptive import AdaptiveMPCController
 from control.mpc_basic import MPCController
 
@@ -32,11 +32,11 @@ def main():
 
     # Create Informed TRRT* planner
     informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, parking_lot, show_eclipse=False)
-    rx_rrt, ry_rrt, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
+    rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
 
     # Ensure the route generation is completed
     try:
-        rx_rrt, ry_rrt, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
+        rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
     except Exception as e:
         print(f"Error in route generation: {e}")
         return
@@ -45,14 +45,14 @@ def main():
     ref_trajectory = transform_arrays_with_angles(rx_opt, ry_opt)
 
     # Plot Informed RRT* Path
-    plt.plot(rx_rrt, ry_rrt, "g--", label="Informed RRT* Path")  # Green dashed line
+    plt.plot(rx, ry, "g--", label="Informed RRT* Path")  # Green dashed line
 
     # Plot Optimized Path
     plt.plot(rx_opt, ry_opt, "-r", label="Optimized Path")  # Red solid line
 
     # MPC Controller
     wheelbase = 2.5  # Example wheelbase of the vehicle in meters
-    mpc_controller = MPCController(horizon=10, dt=0.1, parking_lot=parking_lot, wheelbase=wheelbase)
+    mpc_controller = AdaptiveMPCController(horizon=10, dt=0.1, parking_lot=parking_lot, wheelbase=wheelbase)
 
     # Follow the trajectory using the MPC controller
     trajectory = mpc_controller.follow_trajectory(start_pose, ref_trajectory)

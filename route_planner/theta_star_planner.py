@@ -91,15 +91,20 @@ class ThetaStar:
 
                 self.update_vertex(current_node, neighbor)
 
-        return []
+        return [], []  # 빈 경로 반환
 
     def reconstruct_path(self, current_node):
-        path = []
+        x_path = []
+        y_path = []
         while current_node != self.start:
-            path.append((current_node.x, current_node.y))
+            x_path.append(current_node.x)
+            y_path.append(current_node.y)
             current_node = self.came_from[current_node]
-        path.append((self.start.x, self.start.y))
-        return path[::-1]
+        x_path.append(self.start.x)
+        y_path.append(self.start.y)
+        x_path.reverse()
+        y_path.reverse()
+        return x_path, y_path
 
 def main():
     # Create a parking lot instance
@@ -126,10 +131,9 @@ def main():
     theta_star = ThetaStar(start_node, goal_node, parking_lot)
 
     # Find the path
-    path = theta_star.find_path()
+    rx, ry = theta_star.find_path()
 
-    if path:
-        rx, ry = zip(*path)
+    if rx and ry:
         plt.plot(rx, ry, "-r", label="Theta* Path")
         plt.legend()
         plt.title("Theta* Pathfinding")

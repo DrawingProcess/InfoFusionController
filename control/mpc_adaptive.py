@@ -2,7 +2,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 from space.parking_lot import ParkingLot
-from adlab_planning.route_planner.informed_rrt_star_smooth_planner import Pose, InformedTRRTStar
+from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
 from utils import calculate_angle, transform_arrays_with_angles
 
 class AdaptiveMPCController:
@@ -135,7 +135,7 @@ def main():
     
     # Ensure the route generation is completed
     try:
-        rx_rrt, ry_rrt, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
+        rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
     except Exception as e:
         print(f"Error in route generation: {e}")
         return
@@ -143,11 +143,11 @@ def main():
     # Transform reference trajectory
     ref_trajectory = transform_arrays_with_angles(rx_opt, ry_opt)
 
-    # Plot Informed RRT* Path
-    plt.plot(rx_rrt, ry_rrt, "g--", label="Informed RRT* Path")  # Green dashed line
+    # Plot Theta* Path
+    plt.plot(rx, ry, "g--", label="Theta* Path")  # Green dashed line
 
     # Plot Optimized Path
-    plt.plot(rx_opt, ry_opt, "-r", label="Optimized Path")  # Red solid line
+    plt.plot(rx_opt, ry_opt, "-r", label="Informed TRRT* Path")  # Red solid line
 
     # Adaptive MPC Controller
     wheelbase = 2.5  # Example wheelbase of the vehicle in meters
