@@ -45,6 +45,8 @@ class InformedTRRTStar:
                 x_rand = x_rand + self.x_center
                 x_rand_node = Node(x_rand[0], x_rand[1], 0.0)
                 if self.is_within_parking_lot(x_rand_node) and (path_region is None or self.is_within_region(x_rand_node, path_region)):
+                    # 시각화 추가: 샘플링된 점 플롯
+                    # plt.plot(x_rand_node.x, x_rand_node.y, "or")
                     return x_rand_node
         else:
             return self.get_random_node(path_region)
@@ -188,12 +190,61 @@ class InformedTRRTStar:
         angle = math.atan2(U[1, 0], U[0, 0])
         angle = angle * 180.0 / math.pi
 
-        a = s[0]
-        b = s[1]
+        a = s[0]  # Semi-major axis
+        b = s[1]  # Semi-minor axis
 
+        # Plot the ellipse representing the sampling area
         ellipse = plt.matplotlib.patches.Ellipse(xy=self.x_center, width=a * 2.0, height=b * 2.0, angle=angle, edgecolor='b', fc='None', lw=1, ls='--')
         plt.gca().add_patch(ellipse)
 
+    def plot_process(self, node):
+        plt.plot(node.x, node.y, "xc")
+        if self.show_eclipse and self.c_best < float("inf"):
+            self.plot_ellipse()
+        plt.gcf().canvas.mpl_connect(
+            "key_release_event",
+            lambda event: [exit(0) if event.key == "escape" else None],
+        )
+        if len(self.nodes) % 10 == 0:
+            plt.pause(0.001)
+
+    def search_route(self, show_process=True):
+        # Step 1: Use Theta* to find an initial path
+        theta_star = ThetaStar(self.start, self.goal, self.parking_lot)
+        theta_path = theta_star.find_path()
+        path_region = self.narrow_sample(theta_path)
+
+        for _ in range(self.max_iter):
+            rand_node = self.sample(path_region)
+            nearest_node = self.nodes[self.get_nearest_node_index(rand_node)]
+            new_node = self.steer(nearest_node, rand_node, extend_length=self.search_radius)
+
+            if not self.is_collision_free(nearest_node, new_node):
+                continue
+
+            near_nodes = [node for node in self.nodes if math.hypot(node.x - new_node.x, node.y - new_node.y) <= self.search_radius]
+            best_parent = self.search_best_parent(new_node, near_nodes)
+
+            if best_parent:
+                new_node = self.steer(best_parent, new_node)
+                new_node.parent = best_parent
+
+            self.nodes.append(new_node)
+            self.rewire(new_node, near_nodes)
+
+            if math.hypot(new_node.x - self.goal.x, new_node.y - self.goal.y) <= self.search_radius:
+                final_node = self.steer(new_node, self.goal)
+                if self.is_collision_free(new_node, final_node):
+                    self.goal = final_node
+                    self.goal.parent = new_node
+                    self.nodes.append(self.goal)
+                    self.c_best = self.goal.cost  # Update the best cost
+                    print("Goal Reached")
+
+            if show_process:
+                self.plot_process(new_node)
+
+        return self.generate_final_course()
 
 def main():
     parking_lot = ParkingLot()
@@ -217,7 +268,7 @@ def main():
     plt.axis("equal")
 
     informed_trrt_star = InformedTRRTStar(start_pose, goal_pose, parking_lot, show_eclipse=False)
-    rx, ry = informed_trrt_star.search_route(show_process=True)
+    rx, ry = informed_trrt_star.search_route(show_process=False)
     plt.plot(rx, ry, "-r")
     plt.pause(0.001)
     plt.show()
