@@ -2,7 +2,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 from space.parking_lot import ParkingLot
-from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
+from adlab_planning.route_planner.informed_rrt_star_smooth_planner import Pose, InformedTRRTStar
 from utils import calculate_angle, transform_arrays_with_angles
 
 class AdaptiveMPCController:

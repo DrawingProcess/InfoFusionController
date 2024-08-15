@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot as plt
 
 from space.parking_lot import ParkingLot
-from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
+from adlab_planning.route_planner.informed_rrt_star_smooth_planner import Pose, InformedTRRTStar
 from control.mpc_adaptive import AdaptiveMPCController
 from control.mpc_basic import MPCController
 
@@ -30,9 +30,6 @@ def main():
     plt.grid(True)
     plt.axis("equal")
 
-    # # Generate a reference trajectory using Informed RRT* (simulated here)
-    # ref_trajectory = np.array([[start_pose.x + (goal_pose.x - start_pose.x) * t, start_pose.y + (goal_pose.y - start_pose.y) * t, goal_pose.theta, 1.0] for t in np.linspace(0, 1, 50)])
-
     # Create Informed TRRT* planner
     informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, parking_lot, show_eclipse=False)
     rx_rrt, ry_rrt, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
@@ -54,7 +51,8 @@ def main():
     plt.plot(rx_opt, ry_opt, "-r", label="Optimized Path")  # Red solid line
 
     # MPC Controller
-    mpc_controller = MPCController(horizon=10, dt=0.1, parking_lot=parking_lot)
+    wheelbase = 2.5  # Example wheelbase of the vehicle in meters
+    mpc_controller = MPCController(horizon=10, dt=0.1, parking_lot=parking_lot, wheelbase=wheelbase)
 
     # Follow the trajectory using the MPC controller
     trajectory = mpc_controller.follow_trajectory(start_pose, ref_trajectory)

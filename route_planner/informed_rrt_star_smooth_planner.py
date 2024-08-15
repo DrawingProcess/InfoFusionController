@@ -2,10 +2,20 @@ import math
 import random
 import numpy as np
 import matplotlib.pyplot as plt
-
 from space.parking_lot import ParkingLot
-from route_planner.theta_star_planner import ThetaStar, Node, Pose  # Assume Theta* is implemented here
 
+class Pose:
+    def __init__(self, x, y, theta):
+        self.x = x
+        self.y = y
+        self.theta = theta
+
+class Node:
+    def __init__(self, x, y, cost, parent=None):
+        self.x = x
+        self.y = y
+        self.cost = cost
+        self.parent = parent
 
 class InformedTRRTStar:
     def __init__(self, start, goal, parking_lot, max_iter=300, search_radius=10, show_eclipse=False):
@@ -15,11 +25,11 @@ class InformedTRRTStar:
         self.max_iter = max_iter
         self.search_radius = search_radius
         self.nodes = [self.start]
-        self.c_best = float("inf")  # Initialize the cost to reach the goal
+        self.c_best = float("inf")
         self.x_center = np.array([(self.start.x + self.goal.x) / 2.0, (self.start.y + self.goal.y) / 2.0])
         self.c_min = np.linalg.norm(np.array([self.start.x, self.start.y]) - np.array([self.goal.x, self.goal.y]))
         self.C = self.rotation_to_world_frame()
-        self.show_eclipse = show_eclipse  # Flag to enable/disable eclipse drawing
+        self.show_eclipse = show_eclipse
 
     def rotation_to_world_frame(self):
         a1 = np.array([self.goal.x - self.start.x, self.goal.y - self.start.y])
@@ -27,34 +37,17 @@ class InformedTRRTStar:
         a2 = np.array([-a1[1], a1[0]])
         return np.vstack((a1, a2)).T
 
-    def narrow_sample(self, theta_path):
-        # Narrow the sampling region based on the initial Theta* path
-        path_region = []
-        margin = self.search_radius  # You can define the margin to your liking
-        for i in range(len(theta_path) - 1):
-            x1, y1 = theta_path[i]
-            x2, y2 = theta_path[i+1]
-            path_region.append((x1, y1, x2, y2, margin))
-        return path_region
-
-    def sample(self, path_region=None):
+    def sample(self):
         if self.c_best < float("inf"):
             while True:
                 x_ball = self.sample_unit_ball()
                 x_rand = np.dot(np.dot(self.C, np.diag([self.c_best / 2.0, math.sqrt(self.c_best**2 - self.c_min**2) / 2.0])), x_ball)
                 x_rand = x_rand + self.x_center
                 x_rand_node = Node(x_rand[0], x_rand[1], 0.0)
-                if self.is_within_parking_lot(x_rand_node) and (path_region is None or self.is_within_region(x_rand_node, path_region)):
+                if self.is_within_parking_lot(x_rand_node):
                     return x_rand_node
         else:
-            return self.get_random_node(path_region)
-
-    def is_within_region(self, node, path_region):
-        for (x1, y1, x2, y2, margin) in path_region:
-            d = abs((y2 - y1) * node.x - (x2 - x1) * node.y + x2 * y1 - y2 * x1) / math.hypot(y2 - y1, x2 - x1)
-            if d <= margin:
-                return True
-        return False
+            return self.get_random_node()
 
     def sample_unit_ball(self):
         a = random.random()
@@ -67,13 +60,10 @@ class InformedTRRTStar:
     def is_within_parking_lot(self, node):
         return 0 <= node.x <= self.parking_lot.lot_width and 0 <= node.y <= self.parking_lot.lot_height
 
-    def get_random_node(self, path_region=None):
-        while True:
-            x = random.uniform(0, self.parking_lot.lot_width)
-            y = random.uniform(0, self.parking_lot.lot_height)
-            node = Node(x, y, 0.0)
-            if path_region is None or self.is_within_region(node, path_region):
-                return node
+    def get_random_node(self):
+        x = random.uniform(0, self.parking_lot.lot_width)
+        y = random.uniform(0, self.parking_lot.lot_height)
+        return Node(x, y, 0.0)
 
     def get_nearest_node_index(self, node):
         dlist = [(n.x - node.x) ** 2 + (n.y - node.y) ** 2 for n in self.nodes]
@@ -124,13 +114,8 @@ class InformedTRRTStar:
                     near_node.cost = cost
 
     def search_route(self, show_process=True):
-        # Step 1: Use Theta* to find an initial path
-        theta_star = ThetaStar(self.start, self.goal, self.parking_lot)
-        theta_path = theta_star.find_path()
-        path_region = self.narrow_sample(theta_path)
-
         for _ in range(self.max_iter):
-            rand_node = self.sample(path_region)
+            rand_node = self.sample()
             nearest_node = self.nodes[self.get_nearest_node_index(rand_node)]
             new_node = self.steer(nearest_node, rand_node, extend_length=self.search_radius)
 
@@ -159,7 +144,14 @@ class InformedTRRTStar:
             if show_process:
                 self.plot_process(new_node)
 
-        return self.generate_final_course()
+        # Generate and optimize the final course
+        rx, ry = self.generate_final_course()
+        theta_star = ThetaStar(self.parking_lot)
+        path_nodes = [Node(x, y, 0) for x, y in zip(rx, ry)]
+        optimized_path_nodes = theta_star.optimize_path(path_nodes)
+
+        rx_opt, ry_opt = [node.x for node in optimized_path_nodes], [node.y for node in optimized_path_nodes]
+        return rx, ry, rx_opt, ry_opt
 
     def generate_final_course(self):
         rx, ry = [], []
@@ -194,6 +186,40 @@ class InformedTRRTStar:
         ellipse = plt.matplotlib.patches.Ellipse(xy=self.x_center, width=a * 2.0, height=b * 2.0, angle=angle, edgecolor='b', fc='None', lw=1, ls='--')
         plt.gca().add_patch(ellipse)
 
+class ThetaStar:
+    def __init__(self, parking_lot):
+        self.parking_lot = parking_lot
+
+    def is_collision_free(self, node1, node2):
+        x1, y1 = node1.x, node1.y
+        x2, y2 = node2.x, node2.y
+        
+        # Ensure the segment is within the parking lot boundaries
+        if not (0 <= x1 <= self.parking_lot.lot_width and 0 <= y1 <= self.parking_lot.lot_height and 
+                0 <= x2 <= self.parking_lot.lot_width and 0 <= y2 <= self.parking_lot.lot_height):
+            return False
+        
+        # Use a high-resolution check along the line segment
+        num_checks = int(math.hypot(x2 - x1, y2 - y1) * 10)
+        for i in range(num_checks):
+            t = i / num_checks
+            x = x1 + t * (x2 - x1)
+            y = y1 + t * (y2 - y1)
+            # Ensure the point is within the parking lot and not on an obstacle
+            if not self.parking_lot.is_not_crossed_obstacle((round(x1), round(y1)), (round(x), round(y))):
+                return False
+        return True
+
+    def optimize_path(self, path):
+        optimized_path = [path[0]]
+        for i in range(1, len(path) - 1):
+            if not self.is_collision_free(optimized_path[-1], path[i+1]):
+                # If the segment from previous node to next node is not collision-free, add the current node to the path
+                optimized_path.append(path[i])
+        optimized_path.append(path[-1])
+        return optimized_path
+
+
 
 def main():
     parking_lot = ParkingLot()
@@ -204,27 +230,30 @@ def main():
     # Start and goal pose
     start_pose = Pose(14.0, 4.0, math.radians(0))
     goal_pose = Pose(50.0, 38.0, math.radians(90))
-    print(f"Start Informed-TRRT* Route Planner (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
+    print(f"Start Informed TRRT* Route Planner (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
     plt.xlim(-1, parking_lot.lot_width + 1)
     plt.ylim(-1, parking_lot.lot_height + 1)
-    plt.title("Informed-TRRT* Route Planner")
+    plt.title("Informed TRRT* Route Planner")
     plt.xlabel("X [m]")
     plt.ylabel("Y [m]")
     plt.grid(True)
     plt.axis("equal")
 
-    informed_trrt_star = InformedTRRTStar(start_pose, goal_pose, parking_lot, show_eclipse=False)
-    rx, ry = informed_trrt_star.search_route(show_process=True)
-    plt.plot(rx, ry, "-r")
+    informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, parking_lot, show_eclipse=False)
+    rx_rrt, ry_rrt, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=True)
+
+    # Plot Informed RRT* Path
+    plt.plot(rx_rrt, ry_rrt, "g--", label="Informed RRT* Path")  # Green dashed line
+
+    # Plot Optimized Path
+    plt.plot(rx_opt, ry_opt, "-r", label="Optimized Path")  # Red solid line
+
+    plt.legend()
     plt.pause(0.001)
     plt.show()
 
-
 if __name__ == "__main__":
     main()
-
-    
-
