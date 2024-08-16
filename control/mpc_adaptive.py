@@ -1,15 +1,15 @@
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-from space.parking_lot import ParkingLot
+from space.map_instance import ParkingLot
 from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
 from utils import calculate_angle, transform_arrays_with_angles
 
 class AdaptiveMPCController:
-    def __init__(self, horizon, dt, parking_lot, wheelbase):
+    def __init__(self, horizon, dt, map_instance, wheelbase):
         self.horizon = horizon
         self.dt = dt
-        self.parking_lot = parking_lot
+        self.map_instance = map_instance
         self.wheelbase = wheelbase  # Wheelbase of the vehicle
         self.previous_control = None
 
@@ -37,7 +37,7 @@ class AdaptiveMPCController:
 
     def is_collision_free(self, state):
         x, y, _, _ = state
-        return self.parking_lot.is_not_crossed_obstacle((round(x), round(y)), (round(x), round(y)))
+        return self.map_instance.is_not_crossed_obstacle((round(x), round(y)), (round(x), round(y)))
 
     def update_horizon(self, current_state, ref_trajectory):
         # Update horizon dynamically based on current state or trajectory deviation
@@ -109,21 +109,26 @@ class AdaptiveMPCController:
         return np.array(trajectory)
 
 
-def main():
-    parking_lot = ParkingLot()
-    obstacle_x = [obstacle[0] for obstacle in parking_lot.obstacles]
-    obstacle_y = [obstacle[1] for obstacle in parking_lot.obstacles]
+def main(map_type="ComplexGridMap"):
+    # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
+    if map_type == "ParkingLot":
+        map_instance = ParkingLot(lot_width=100, lot_height=75)
+    else:  # Default to ComplexGridMap
+        map_instance = ComplexGridMap(lot_width=100, lot_height=75)
+
+    obstacle_x = [obstacle[0] for obstacle in map_instance.obstacles]
+    obstacle_y = [obstacle[1] for obstacle in map_instance.obstacles]
     plt.plot(obstacle_x, obstacle_y, ".k")
 
-    # Start and goal pose
-    start_pose = Pose(14.0, 4.0, np.radians(0))
-    goal_pose = Pose(50.0, 38.0, np.radians(90))
+    # 유효한 시작과 목표 좌표 설정
+    start_pose = map_instance.get_random_valid_start_position()
+    goal_pose = map_instance.get_random_valid_goal_position()
     print(f"Start Adaptive MPC Controller (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
-    plt.xlim(-1, parking_lot.lot_width + 1)
-    plt.ylim(-1, parking_lot.lot_height + 1)
+    plt.xlim(-1, map_instance.lot_width + 1)
+    plt.ylim(-1, map_instance.lot_height + 1)
     plt.title("Adaptive MPC Route Planner")
     plt.xlabel("X [m]")
     plt.ylabel("Y [m]")
@@ -131,7 +136,7 @@ def main():
     plt.axis("equal")
 
     # Create Informed TRRT* planner
-    informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, parking_lot, show_eclipse=False)
+    informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
     
     # Ensure the route generation is completed
     try:
@@ -151,7 +156,7 @@ def main():
 
     # Adaptive MPC Controller
     wheelbase = 2.5  # Example wheelbase of the vehicle in meters
-    adaptive_mpc = AdaptiveMPCController(horizon=10, dt=0.1, parking_lot=parking_lot, wheelbase=wheelbase)
+    adaptive_mpc = AdaptiveMPCController(horizon=10, dt=0.1, map_instance=map_instance, wheelbase=wheelbase)
 
     # Follow the trajectory using the Adaptive MPC controller
     trajectory = adaptive_mpc.follow_trajectory(start_pose, ref_trajectory)
