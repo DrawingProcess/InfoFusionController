@@ -1,35 +1,19 @@
 import heapq
 import math
-import random
 import matplotlib.pyplot as plt
+
 from space.parking_lot import ParkingLot
-
-class Pose:
-    def __init__(self, x, y, theta):
-        self.x = x
-        self.y = y
-        self.theta = theta
-
-class Node:
-    def __init__(self, x, y, cost, parent=None):
-        self.x = x
-        self.y = y
-        self.cost = cost
-        self.parent = parent
-        self.f_score = float("inf")  # f_score for A* or Theta*
-
-    def __lt__(self, other):
-        return self.f_score < other.f_score
-
-    def __eq__(self, other):
-        return self.x == other.x and self.y == other.y
-
-    def __hash__(self):
-        return hash((self.x, self.y))
+from route_planner.geometry import Pose, Node
 
 
 class ThetaStar:
     def __init__(self, start, goal, parking_lot):
+        # start와 goal이 Pose 객체라면 Node 객체로 변환
+        if isinstance(start, Pose):
+            start = Node(start.x, start.y, 0.0, -1)
+        if isinstance(goal, Pose):
+            goal = Node(goal.x, goal.y, 0.0, -1)
+            
         self.start = start
         self.goal = goal
         self.parking_lot = parking_lot
@@ -48,7 +32,7 @@ class ThetaStar:
             x = node.x + dx
             y = node.y + dy
             if 0 <= x <= self.parking_lot.lot_width and 0 <= y <= self.parking_lot.lot_height:
-                neighbor = Node(x, y, node.cost + math.hypot(dx, dy))
+                neighbor = Node(x, y, node.cost + math.hypot(dx, dy), None)
                 if self.parking_lot.is_not_crossed_obstacle((node.x, node.y), (x, y)):
                     neighbors.append(neighbor)
         return neighbors
@@ -126,8 +110,8 @@ def main():
     plt.plot(goal_pose.x, goal_pose.y, "xb", label="Goal")
 
     # Initialize Theta* planner
-    start_node = Node(start_pose.x, start_pose.y, 0.0)
-    goal_node = Node(goal_pose.x, goal_pose.y, 0.0)
+    start_node = Node(start_pose.x, start_pose.y, 0.0, -1)
+    goal_node = Node(goal_pose.x, goal_pose.y, 0.0, -1)
     theta_star = ThetaStar(start_node, goal_node, parking_lot)
 
     # Find the path

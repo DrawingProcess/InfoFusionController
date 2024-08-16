@@ -4,20 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from space.parking_lot import ParkingLot
 
-class Pose:
-    def __init__(self, x, y, theta):
-        self.x = x
-        self.y = y
-        self.theta = theta
+from route_planner.geometry import Pose, Node
 
-class Node:
-    def __init__(self, x, y, cost, parent=None):
-        self.x = x
-        self.y = y
-        self.cost = cost
-        self.parent = parent
-
-class InformedTRRTStar:
+class InformedRRTSmoothStar:
     def __init__(self, start, goal, parking_lot, max_iter=300, search_radius=10, show_eclipse=False):
         self.start = Node(start.x, start.y, 0.0)
         self.goal = Node(goal.x, goal.y, 0.0)
@@ -242,7 +231,7 @@ def main():
     plt.grid(True)
     plt.axis("equal")
 
-    informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, parking_lot, show_eclipse=False)
+    informed_rrt_star = InformedRRTSmoothStar(start_pose, goal_pose, parking_lot, show_eclipse=False)
     rx_rrt, ry_rrt, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=True)
 
     # Plot Informed RRT* Path

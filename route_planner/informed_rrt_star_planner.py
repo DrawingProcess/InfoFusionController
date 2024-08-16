@@ -5,18 +5,7 @@ import matplotlib.pyplot as plt
 
 from space.parking_lot import ParkingLot
 
-class Pose:
-    def __init__(self, x, y, theta):
-        self.x = x
-        self.y = y
-        self.theta = theta
-
-class Node:
-    def __init__(self, x, y, cost, parent=None):
-        self.x = x
-        self.y = y
-        self.cost = cost
-        self.parent = parent
+from route_planner.geometry import Pose, Node
 
 
 class InformedRRTStar:
