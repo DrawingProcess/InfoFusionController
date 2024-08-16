@@ -3,22 +3,24 @@ import random
 import matplotlib.pyplot as plt
 
 from space.parking_lot import ParkingLot
+from space.complex_grid_map import ComplexGridMap
+
 from route_planner.geometry import Pose, Node
 
 
 class RRTStar:
-    def __init__(self, start, goal, parking_lot, max_iter=300, search_radius=10):
+    def __init__(self, start, goal, map_instance, max_iter=300, search_radius=10):
         self.start = Node(start.x, start.y, 0.0)
         self.goal = Node(goal.x, goal.y, 0.0)
-        self.parking_lot = parking_lot
+        self.map_instance = map_instance
         self.max_iter = max_iter
         self.search_radius = search_radius
         self.nodes = [self.start]
         self.goal_reached = False
 
     def get_random_node(self):
-        x = random.uniform(0, self.parking_lot.lot_width)
-        y = random.uniform(0, self.parking_lot.lot_height)
+        x = random.uniform(0, self.map_instance.lot_width)
+        y = random.uniform(0, self.map_instance.lot_height)
         return Node(x, y, 0.0)
 
     def get_nearest_node_index(self, node):
@@ -48,7 +50,7 @@ class RRTStar:
     def is_collision_free(self, node1, node2):
         x1, y1 = node1.x, node1.y
         x2, y2 = node2.x, node2.y
-        return self.parking_lot.is_not_crossed_obstacle((round(x1), round(y1)), (round(x2), round(y2)))
+        return self.map_instance.is_not_crossed_obstacle((round(x1), round(y1)), (round(x2), round(y2)))
 
     def search_best_parent(self, new_node, near_nodes):
         best_parent = None
@@ -116,28 +118,33 @@ class RRTStar:
         return rx[::-1], ry[::-1]
 
 
-def main():
-    parking_lot = ParkingLot()
-    obstacle_x = [obstacle[0] for obstacle in parking_lot.obstacles]
-    obstacle_y = [obstacle[1] for obstacle in parking_lot.obstacles]
+def main(map_type="ComplexGridMap"):
+    # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
+    if map_type == "ParkingLot":
+        map_instance = ParkingLot(lot_width=100, lot_height=75)
+    else:  # Default to ComplexGridMap
+        map_instance = ComplexGridMap(lot_width=100, lot_height=75)
+
+    obstacle_x = [obstacle[0] for obstacle in map_instance.obstacles]
+    obstacle_y = [obstacle[1] for obstacle in map_instance.obstacles]
     plt.plot(obstacle_x, obstacle_y, ".k")
 
-    # Start and goal pose
-    start_pose = Pose(14.0, 4.0, math.radians(0))
-    goal_pose = Pose(69.0, 59.0, math.radians(90))
+    # 유효한 시작과 목표 좌표 설정
+    start_pose = map_instance.get_random_valid_start_position()
+    goal_pose = map_instance.get_random_valid_goal_position()
     print(f"Start RRT* Route Planner (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
-    plt.xlim(-1, parking_lot.lot_width + 1)
-    plt.ylim(-1, parking_lot.lot_height + 1)
+    plt.xlim(-1, map_instance.lot_width + 1)
+    plt.ylim(-1, map_instance.lot_height + 1)
     plt.title("RRT* Route Planner")
     plt.xlabel("X [m]")
     plt.ylabel("Y [m]")
     plt.grid(True)
     plt.axis("equal")
 
-    rrt_star = RRTStar(start_pose, goal_pose, parking_lot)
+    rrt_star = RRTStar(start_pose, goal_pose, map_instance)
     rx, ry = rrt_star.search_route()
 
     if not rx and not ry:

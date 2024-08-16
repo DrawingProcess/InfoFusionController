@@ -4,14 +4,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from space.parking_lot import ParkingLot
+from space.complex_grid_map import ComplexGridMap
+
 from route_planner.geometry import Pose, Node
 from route_planner.theta_star_planner import ThetaStar  # Assume Theta* is implemented here
 
 class InformedTRRTStar:
-    def __init__(self, start, goal, parking_lot, max_iter=300, search_radius=10, show_eclipse=False):
+    def __init__(self, start, goal, map_instance, max_iter=300, search_radius=10, show_eclipse=False):
         self.start = Node(start.x, start.y, 0.0)
         self.goal = Node(goal.x, goal.y, 0.0)
-        self.parking_lot = parking_lot
+        self.map_instance = map_instance
         self.max_iter = max_iter
         self.search_radius = search_radius
         self.nodes = [self.start]
@@ -44,7 +46,7 @@ class InformedTRRTStar:
                 x_rand = np.dot(np.dot(self.C, np.diag([self.c_best / 2.0, math.sqrt(self.c_best ** 2 - self.c_min ** 2) / 2.0])), x_ball)
                 x_rand = x_rand + self.x_center
                 x_rand_node = Node(x_rand[0], x_rand[1], 0.0)
-                if self.is_within_parking_lot(x_rand_node) and (path_region is None or self.is_within_region(x_rand_node, path_region)):
+                if self.is_within_map_instance(x_rand_node) and (path_region is None or self.is_within_region(x_rand_node, path_region)):
                     return x_rand_node
         else:
             return self.get_random_node(path_region)
@@ -64,13 +66,13 @@ class InformedTRRTStar:
         sample = np.array([b * math.cos(2 * math.pi * a / b), b * math.sin(2 * math.pi * a / b)])
         return sample
 
-    def is_within_parking_lot(self, node):
-        return 0 <= node.x <= self.parking_lot.lot_width and 0 <= node.y <= self.parking_lot.lot_height
+    def is_within_map_instance(self, node):
+        return 0 <= node.x <= self.map_instance.lot_width and 0 <= node.y <= self.map_instance.lot_height
 
     def get_random_node(self, path_region=None):
         while True:
-            x = random.uniform(0, self.parking_lot.lot_width)
-            y = random.uniform(0, self.parking_lot.lot_height)
+            x = random.uniform(0, self.map_instance.lot_width)
+            y = random.uniform(0, self.map_instance.lot_height)
             node = Node(x, y, 0.0)
             if path_region is None or self.is_within_region(node, path_region):
                 return node
@@ -102,7 +104,7 @@ class InformedTRRTStar:
     def is_collision_free(self, node1, node2):
         x1, y1 = node1.x, node1.y
         x2, y2 = node2.x, node2.y
-        return self.parking_lot.is_not_crossed_obstacle((round(x1), round(y1)), (round(x2), round(y2)))
+        return self.map_instance.is_not_crossed_obstacle((round(x1), round(y1)), (round(x2), round(y2)))
 
     def search_best_parent(self, new_node, near_nodes):
         best_parent = None
@@ -125,7 +127,7 @@ class InformedTRRTStar:
 
     def search_route(self, show_process=True):
         # Step 1: Use Theta* to find an initial path
-        theta_star = ThetaStar(self.start, self.goal, self.parking_lot)
+        theta_star = ThetaStar(self.start, self.goal, self.map_instance)
         rx, ry = theta_star.find_path()
         if not rx or not ry:
             # If Theta* cannot find a path, return empty routes
@@ -205,28 +207,33 @@ class InformedTRRTStar:
         ellipse = plt.matplotlib.patches.Ellipse(xy=self.x_center, width=a * 2.0, height=b * 2.0, angle=angle, edgecolor='b', fc='None', lw=1, ls='--')
         plt.gca().add_patch(ellipse)
 
-def main():
-    parking_lot = ParkingLot()
-    obstacle_x = [obstacle[0] for obstacle in parking_lot.obstacles]
-    obstacle_y = [obstacle[1] for obstacle in parking_lot.obstacles]
+def main(map_type="ComplexGridMap"):
+    # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
+    if map_type == "ParkingLot":
+        map_instance = ParkingLot(lot_width=100, lot_height=75)
+    else:  # Default to ComplexGridMap
+        map_instance = ComplexGridMap(lot_width=100, lot_height=75)
+
+    obstacle_x = [obstacle[0] for obstacle in map_instance.obstacles]
+    obstacle_y = [obstacle[1] for obstacle in map_instance.obstacles]
     plt.plot(obstacle_x, obstacle_y, ".k")
 
-    # Start and goal pose
-    start_pose = Pose(14.0, 4.0, math.radians(0))
-    goal_pose = Pose(50.0, 38.0, math.radians(90))
+    # 유효한 시작과 목표 좌표 설정
+    start_pose = map_instance.get_random_valid_start_position()
+    goal_pose = map_instance.get_random_valid_goal_position()
     print(f"Start Informed-TRRT* Route Planner (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
-    plt.xlim(-1, parking_lot.lot_width + 1)
-    plt.ylim(-1, parking_lot.lot_height + 1)
+    plt.xlim(-1, map_instance.lot_width + 1)
+    plt.ylim(-1, map_instance.lot_height + 1)
     plt.title("Informed-TRRT* Route Planner")
     plt.xlabel("X [m]")
     plt.ylabel("Y [m]")
     plt.grid(True)
     plt.axis("equal")
 
-    informed_trrt_star = InformedTRRTStar(start_pose, goal_pose, parking_lot, show_eclipse=False)
+    informed_trrt_star = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
     rx, ry, rx_opt, ry_opt = informed_trrt_star.search_route(show_process=False)
 
     if not rx and not ry:

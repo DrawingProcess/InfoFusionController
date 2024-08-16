@@ -10,6 +10,7 @@ import math
 import matplotlib.pyplot as plt
 
 from space.parking_lot import ParkingLot
+from space.complex_grid_map import ComplexGridMap
 
 from route_planner.geometry import Pose
 
@@ -30,8 +31,8 @@ class Node:
 
 
 class HybridAStarRoutePlanner:
-    def __init__(self, parking_lot):
-        self.parking_lot: ParkingLot = parking_lot
+    def __init__(self, map_instance):
+        self.map_instance: ParkingLot = map_instance
 
         # Motion Model
         self.wheelbase = 2.7
@@ -45,7 +46,7 @@ class HybridAStarRoutePlanner:
         start_node = Node(start_pose, 0, 0, -1)
         self.goal_node = Node(goal_pose, 0, 0, -1)
 
-        open_set = {self.parking_lot.get_grid_index(start_node.discrete_x, start_node.discrete_y): start_node}
+        open_set = {self.map_instance.get_grid_index(start_node.discrete_x, start_node.discrete_y): start_node}
         closed_set = {}
 
         while open_set:
@@ -77,11 +78,11 @@ class HybridAStarRoutePlanner:
                 for velocity in self.chord_lengths
             ]
             for next_node in next_nodes:
-                if self.parking_lot.is_not_crossed_obstacle(
+                if self.map_instance.is_not_crossed_obstacle(
                         (current_node.discrete_x, current_node.discrete_y),
                         (next_node.discrete_x, next_node.discrete_y),
                 ):
-                    next_node_index = self.parking_lot.get_grid_index(next_node.discrete_x, next_node.discrete_y)
+                    next_node_index = self.map_instance.get_grid_index(next_node.discrete_x, next_node.discrete_y)
                     if next_node_index in closed_set:
                         continue
 
@@ -153,28 +154,33 @@ class HybridAStarRoutePlanner:
             plt.pause(0.001)
 
 
-def main():
-    parking_lot = ParkingLot()
-    obstacle_x = [obstacle[0] for obstacle in parking_lot.obstacles]
-    obstacle_y = [obstacle[1] for obstacle in parking_lot.obstacles]
+def main(map_type="ComplexGridMap"):
+    # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
+    if map_type == "ParkingLot":
+        map_instance = ParkingLot(lot_width=100, lot_height=75)
+    else:  # Default to ComplexGridMap
+        map_instance = ComplexGridMap(lot_width=100, lot_height=75)
+
+    obstacle_x = [obstacle[0] for obstacle in map_instance.obstacles]
+    obstacle_y = [obstacle[1] for obstacle in map_instance.obstacles]
     plt.plot(obstacle_x, obstacle_y, ".k")
 
-    # start and goal pose
-    start_pose = Pose(14.0, 4.0, math.radians(0))
-    goal_pose = Pose(69.0, 59.0, math.radians(90))
+    # 유효한 시작과 목표 좌표 설정
+    start_pose = map_instance.get_random_valid_start_position()
+    goal_pose = map_instance.get_random_valid_goal_position()
     print(f"Start Hybrid A Star Route Planner (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
-    plt.xlim(-1, parking_lot.lot_width + 1)
-    plt.ylim(-1, parking_lot.lot_height + 1)
+    plt.xlim(-1, map_instance.lot_width + 1)
+    plt.ylim(-1, map_instance.lot_height + 1)
     plt.title("Hybrid A Star Route Planner")
     plt.xlabel("X [m]")
     plt.ylabel("Y [m]")
     plt.grid(True)
     plt.axis("equal")
 
-    hybrid_a_star_route_planner = HybridAStarRoutePlanner(parking_lot)
+    hybrid_a_star_route_planner = HybridAStarRoutePlanner(map_instance)
     rx, ry = hybrid_a_star_route_planner.search_route(start_pose, goal_pose, True)
     plt.plot(rx, ry, "-r")
     plt.pause(0.001)

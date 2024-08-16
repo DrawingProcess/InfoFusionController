@@ -3,11 +3,11 @@ import math
 import matplotlib.pyplot as plt
 
 from space.parking_lot import ParkingLot
+from space.complex_grid_map import ComplexGridMap
 from route_planner.geometry import Pose, Node
 
-
 class ThetaStar:
-    def __init__(self, start, goal, parking_lot):
+    def __init__(self, start, goal, map_instance):
         # start와 goal이 Pose 객체라면 Node 객체로 변환
         if isinstance(start, Pose):
             start = Node(start.x, start.y, 0.0, -1)
@@ -16,7 +16,7 @@ class ThetaStar:
             
         self.start = start
         self.goal = goal
-        self.parking_lot = parking_lot
+        self.map_instance = map_instance
         self.open_set = []
         self.closed_set = set()
         self.g_score = {self.start: 0}
@@ -31,17 +31,17 @@ class ThetaStar:
         for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1), (-1, 1), (1, -1)]:
             x = node.x + dx
             y = node.y + dy
-            if 0 <= x <= self.parking_lot.lot_width and 0 <= y <= self.parking_lot.lot_height:
+            if 0 <= x < self.map_instance.lot_width and 0 <= y < self.map_instance.lot_height:
                 neighbor = Node(x, y, node.cost + math.hypot(dx, dy), None)
-                if self.parking_lot.is_not_crossed_obstacle((node.x, node.y), (x, y)):
+                if self.map_instance.is_not_crossed_obstacle((node.x, node.y), (x, y)):
                     neighbors.append(neighbor)
         return neighbors
 
     def line_of_sight(self, node1, node2):
-        return self.parking_lot.is_not_crossed_obstacle((node1.x, node1.y), (node2.x, node2.y))
+        return self.map_instance.is_not_crossed_obstacle((node1.x, node1.y), (node2.x, node2.y))
 
     def update_vertex(self, current_node, neighbor):
-        if self.line_of_sight(self.came_from[current_node], neighbor):
+        if current_node in self.came_from and self.line_of_sight(self.came_from[current_node], neighbor):
             parent = self.came_from[current_node]
             new_g = self.g_score[parent] + self.heuristic(parent, neighbor)
             if new_g < self.g_score.get(neighbor, float('inf')):
@@ -90,37 +90,40 @@ class ThetaStar:
         y_path.reverse()
         return x_path, y_path
 
-def main():
-    # Create a parking lot instance
-    parking_lot = ParkingLot()
+def main(map_type="ComplexGridMap"):
+    # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
+    if map_type == "ParkingLot":
+        map_instance = ParkingLot(lot_width=100, lot_height=75)
+    else:  # Default to ComplexGridMap
+        map_instance = ComplexGridMap(lot_width=100, lot_height=75)
 
-    # Define start and goal positions
-    start_pose = Pose(14.0, 4.0, math.radians(0))
-    goal_pose = Pose(50.0, 38.0, math.radians(90))
+    # 유효한 시작과 목표 좌표 설정
+    start_pose = map_instance.get_random_valid_start_position()
+    goal_pose = map_instance.get_random_valid_goal_position()
     
-    print(f"Start Theta* Pathfinding (start {start_pose.x, start_pose.y}, goal {goal_pose.x, goal_pose.y})")
+    print(f"Start Theta* Pathfinding (start {start_pose}, goal {goal_pose}) with {map_type}")
 
-    # Plot obstacles
-    obstacle_x = [obstacle[0] for obstacle in parking_lot.obstacles]
-    obstacle_y = [obstacle[1] for obstacle in parking_lot.obstacles]
+    # 장애물 시각화
+    obstacle_x = [obstacle[0] for obstacle in map_instance.obstacles]
+    obstacle_y = [obstacle[1] for obstacle in map_instance.obstacles]
     plt.plot(obstacle_x, obstacle_y, ".k", label="Obstacles")
 
-    # Plot start and goal
-    plt.plot(start_pose.x, start_pose.y, "og", label="Start")
-    plt.plot(goal_pose.x, goal_pose.y, "xb", label="Goal")
+    # 시작 및 목표 위치 시각화
+    plt.plot(start_pose[0], start_pose[1], "og", label="Start")
+    plt.plot(goal_pose[0], goal_pose[1], "xb", label="Goal")
 
-    # Initialize Theta* planner
-    start_node = Node(start_pose.x, start_pose.y, 0.0, -1)
-    goal_node = Node(goal_pose.x, goal_pose.y, 0.0, -1)
-    theta_star = ThetaStar(start_node, goal_node, parking_lot)
+    # Theta* 알고리즘 초기화
+    start_node = Node(start_pose[0], start_pose[1], 0.0, -1)
+    goal_node = Node(goal_pose[0], goal_pose[1], 0.0, -1)
+    theta_star = ThetaStar(start_node, goal_node, map_instance)
 
-    # Find the path
+    # 경로 찾기
     rx, ry = theta_star.find_path()
 
     if rx and ry:
         plt.plot(rx, ry, "-r", label="Theta* Path")
         plt.legend()
-        plt.title("Theta* Pathfinding")
+        plt.title(f"Theta* Pathfinding using {map_type}")
         plt.xlabel("X [m]")
         plt.ylabel("Y [m]")
         plt.grid(True)
@@ -130,4 +133,5 @@ def main():
         print("No path found!")
 
 if __name__ == "__main__":
+    # 사용할 맵 클래스 선택: "ParkingLot" 또는 "ComplexGridMap"
     main()

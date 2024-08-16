@@ -4,15 +4,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from space.parking_lot import ParkingLot
+from space.complex_grid_map import ComplexGridMap
 
 from route_planner.geometry import Pose, Node
 
 
 class InformedRRTStar:
-    def __init__(self, start, goal, parking_lot, max_iter=300, search_radius=10, show_eclipse=False):
+    def __init__(self, start, goal, map_instance, max_iter=300, search_radius=10, show_eclipse=False):
         self.start = Node(start.x, start.y, 0.0)
         self.goal = Node(goal.x, goal.y, 0.0)
-        self.parking_lot = parking_lot
+        self.map_instance = map_instance
         self.max_iter = max_iter
         self.search_radius = search_radius
         self.nodes = [self.start]
@@ -36,7 +37,7 @@ class InformedRRTStar:
                 x_rand = np.dot(np.dot(self.C, np.diag([self.c_best / 2.0, math.sqrt(self.c_best**2 - self.c_min**2) / 2.0])), x_ball)
                 x_rand = x_rand + self.x_center
                 x_rand_node = Node(x_rand[0], x_rand[1], 0.0)
-                if self.is_within_parking_lot(x_rand_node):
+                if self.is_within_map_instance(x_rand_node):
                     return x_rand_node
         else:
             return self.get_random_node()
@@ -49,12 +50,12 @@ class InformedRRTStar:
         sample = np.array([b * math.cos(2 * math.pi * a / b), b * math.sin(2 * math.pi * a / b)])
         return sample
 
-    def is_within_parking_lot(self, node):
-        return 0 <= node.x <= self.parking_lot.lot_width and 0 <= node.y <= self.parking_lot.lot_height
+    def is_within_map_instance(self, node):
+        return 0 <= node.x <= self.map_instance.lot_width and 0 <= node.y <= self.map_instance.lot_height
 
     def get_random_node(self):
-        x = random.uniform(0, self.parking_lot.lot_width)
-        y = random.uniform(0, self.parking_lot.lot_height)
+        x = random.uniform(0, self.map_instance.lot_width)
+        y = random.uniform(0, self.map_instance.lot_height)
         return Node(x, y, 0.0)
 
     def get_nearest_node_index(self, node):
@@ -84,7 +85,7 @@ class InformedRRTStar:
     def is_collision_free(self, node1, node2):
         x1, y1 = node1.x, node1.y
         x2, y2 = node2.x, node2.y
-        return self.parking_lot.is_not_crossed_obstacle((round(x1), round(y1)), (round(x2), round(y2)))
+        return self.map_instance.is_not_crossed_obstacle((round(x1), round(y1)), (round(x2), round(y2)))
 
     def search_best_parent(self, new_node, near_nodes):
         best_parent = None
@@ -179,28 +180,33 @@ class InformedRRTStar:
         plt.gca().add_patch(ellipse)
 
 
-def main():
-    parking_lot = ParkingLot()
-    obstacle_x = [obstacle[0] for obstacle in parking_lot.obstacles]
-    obstacle_y = [obstacle[1] for obstacle in parking_lot.obstacles]
+def main(map_type="ComplexGridMap"):
+    # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
+    if map_type == "ParkingLot":
+        map_instance = ParkingLot(lot_width=100, lot_height=75)
+    else:  # Default to ComplexGridMap
+        map_instance = ComplexGridMap(lot_width=100, lot_height=75)
+
+    obstacle_x = [obstacle[0] for obstacle in map_instance.obstacles]
+    obstacle_y = [obstacle[1] for obstacle in map_instance.obstacles]
     plt.plot(obstacle_x, obstacle_y, ".k")
 
-    # Start and goal pose
-    start_pose = Pose(14.0, 4.0, math.radians(0))
-    goal_pose = Pose(50.0, 38.0, math.radians(90))
+    # 유효한 시작과 목표 좌표 설정
+    start_pose = map_instance.get_random_valid_start_position()
+    goal_pose = map_instance.get_random_valid_goal_position()
     print(f"Start Informed RRT* Route Planner (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
-    plt.xlim(-1, parking_lot.lot_width + 1)
-    plt.ylim(-1, parking_lot.lot_height + 1)
+    plt.xlim(-1, map_instance.lot_width + 1)
+    plt.ylim(-1, map_instance.lot_height + 1)
     plt.title("Informed RRT* Route Planner")
     plt.xlabel("X [m]")
     plt.ylabel("Y [m]")
     plt.grid(True)
     plt.axis("equal")
 
-    informed_rrt_star = InformedRRTStar(start_pose, goal_pose, parking_lot, show_eclipse=True)
+    informed_rrt_star = InformedRRTStar(start_pose, goal_pose, map_instance, show_eclipse=True)
     rx, ry = informed_rrt_star.search_route(show_process=True)
 
     if not rx and not ry:
