@@ -1,4 +1,4 @@
-import timeit
+import time
 import math
 import matplotlib.pyplot as plt
 
@@ -51,33 +51,42 @@ def main():
 
     # 각 알고리즘의 성능 측정 및 실패 여부 확인
     performance_results = {}
-    fail_counts = {}
+    fail_counts = {name: 0 for name in algorithms}
+
     for name, func in algorithms.items():
-        time_taken = timeit.timeit(func, number=1)  # 한 번 실행하여 시간을 측정
+        total_time = 0.0
+        for _ in range(10):  # 10번 반복 실행
+            # import timeit
+            # time_taken = timeit.timeit(func, number=1)
+            # total_time += time_taken
 
-        # 경로 생성 실패 여부 확인 (빈 리스트로 반환되면 실패)
-        result = func()
-        if isinstance(result, tuple) and (not result[0] or not result[1]):  # rx, ry가 빈 리스트일 때 실패로 간주
-            fail_counts[name] = 1
-        else:
-            fail_counts[name] = 0
+            # 경로 생성 실패 여부 확인 (빈 리스트로 반환되면 실패)
+            start_time = time.time()  # 시작 시간
+            result = func()
+            end_time = time.time()    # 종료 시간
+            time_taken = end_time - start_time  # 실행 시간 계산
+            total_time += time_taken
 
-        performance_results[name] = time_taken
-        print(f"{name}: {time_taken:.6f} 초")
+            if isinstance(result, tuple) and (not result[0] or not result[1]):  # rx, ry가 빈 리스트일 때 실패로 간주
+                fail_counts[name] += 1
+            print(result)
+
+        performance_results[name] = total_time / 10  # 평균 실행 시간 계산
+        print(f"{name}: {performance_results[name]:.6f} 초 (평균)")
 
     # 성능 결과 정렬 및 출력
     sorted_results = sorted(performance_results.items(), key=lambda x: x[1])
     for name, time_taken in sorted_results:
-        print(f"{name}: {time_taken:.6f} 초")
+        print(f"{name}: {time_taken:.6f} 초 (평균)")
 
     # 실패 카운트 시각화
     plt.figure()
     algorithm_names = list(fail_counts.keys())
     fail_values = list(fail_counts.values())
-    plt.bar(algorithm_names, fail_values, color='red')
+    plt.barh(algorithm_names, fail_values, color='red')
     plt.xlabel("Algorithm")
     plt.ylabel("Fail Count")
-    plt.title("Algorithm Pathfinding Failure Counts")
+    plt.title("Algorithm Pathfinding Failure Counts (10 Runs)")
     plt.grid(True)
     plt.show()
 
@@ -86,8 +95,8 @@ def main():
     algorithm_names = [result[0] for result in sorted_results]
     times = [result[1] for result in sorted_results]
     plt.barh(algorithm_names, times, color='skyblue')
-    plt.xlabel("Execution Time (seconds)")
-    plt.title("Algorithm Performance Comparison")
+    plt.xlabel("Average Execution Time (seconds)")
+    plt.title("Algorithm Performance Comparison (10 Runs)")
     plt.grid(True)
     plt.show()
 

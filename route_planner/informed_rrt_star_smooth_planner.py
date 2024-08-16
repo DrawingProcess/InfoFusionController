@@ -19,6 +19,7 @@ class InformedRRTSmoothStar:
         self.c_min = np.linalg.norm(np.array([self.start.x, self.start.y]) - np.array([self.goal.x, self.goal.y]))
         self.C = self.rotation_to_world_frame()
         self.show_eclipse = show_eclipse
+        self.goal_reached = False  # Goal reached flag
 
     def rotation_to_world_frame(self):
         a1 = np.array([self.goal.x - self.start.x, self.goal.y - self.start.y])
@@ -128,10 +129,17 @@ class InformedRRTSmoothStar:
                     self.goal.parent = new_node
                     self.nodes.append(self.goal)
                     self.c_best = self.goal.cost  # Update the best cost
+                    self.goal_reached = True  # Mark goal as reached
                     print("Goal Reached")
+                    break
 
             if show_process:
                 self.plot_process(new_node)
+
+        # 목표에 도달하지 못한 경우 빈 경로 반환
+        if not self.goal_reached:
+            print("Goal Not Reached")
+            return [], [], [], []
 
         # Generate and optimize the final course
         rx, ry = self.generate_final_course()
@@ -184,8 +192,8 @@ class ThetaStar:
         x2, y2 = node2.x, node2.y
         
         # Ensure the segment is within the parking lot boundaries
-        if not (0 <= x1 <= self.parking_lot.lot_width and 0 <= y1 <= self.parking_lot.lot_height and 
-                0 <= x2 <= self.parking_lot.lot_width and 0 <= y2 <= self.parking_lot.lot_height):
+        if not (0 <= x1 <= self.parking_lot.lot_width and 0 <= y1 <= self.parking_lot.lot_height 
+        and 0 <= x2 <= self.parking_lot.lot_width and 0 <= y2 <= self.parking_lot.lot_height):
             return False
         
         # Use a high-resolution check along the line segment
@@ -202,12 +210,11 @@ class ThetaStar:
     def optimize_path(self, path):
         optimized_path = [path[0]]
         for i in range(1, len(path) - 1):
-            if not self.is_collision_free(optimized_path[-1], path[i+1]):
-                # If the segment from previous node to next node is not collision-free, add the current node to the path
+            if not self.is_collision_free(optimized_path[-1], path[i + 1]):
+                # If the segment from the previous node to the next node is not collision-free, add the current node to the path
                 optimized_path.append(path[i])
         optimized_path.append(path[-1])
         return optimized_path
-
 
 
 def main():
@@ -219,13 +226,13 @@ def main():
     # Start and goal pose
     start_pose = Pose(14.0, 4.0, math.radians(0))
     goal_pose = Pose(50.0, 38.0, math.radians(90))
-    print(f"Start Informed TRRT* Route Planner (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
+    print(f"Start Informed RRT* Route Planner (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
     plt.xlim(-1, parking_lot.lot_width + 1)
     plt.ylim(-1, parking_lot.lot_height + 1)
-    plt.title("Informed TRRT* Route Planner")
+    plt.title("Informed RRT* Route Planner")
     plt.xlabel("X [m]")
     plt.ylabel("Y [m]")
     plt.grid(True)
@@ -234,15 +241,19 @@ def main():
     informed_rrt_star = InformedRRTSmoothStar(start_pose, goal_pose, parking_lot, show_eclipse=False)
     rx_rrt, ry_rrt, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=True)
 
-    # Plot Informed RRT* Path
-    plt.plot(rx_rrt, ry_rrt, "g--", label="Informed RRT* Path")  # Green dashed line
+    if not rx_rrt and not ry_rrt:
+        print("Goal not reached. No path found.")
+    else:
+        # Plot Informed RRT* Path
+        plt.plot(rx_rrt, ry_rrt, "g--", label="Informed RRT* Path")  # Green dashed line
 
-    # Plot Optimized Path
-    plt.plot(rx_opt, ry_opt, "-r", label="Optimized Path")  # Red solid line
+        # Plot Optimized Path
+        plt.plot(rx_opt, ry_opt, "-r", label="Optimized Path")  # Red solid line
 
-    plt.legend()
-    plt.pause(0.001)
-    plt.show()
+        plt.legend()
+        plt.pause(0.001)
+        plt.show()
+
 
 if __name__ == "__main__":
     main()

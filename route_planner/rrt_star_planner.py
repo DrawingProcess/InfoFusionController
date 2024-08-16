@@ -14,6 +14,7 @@ class RRTStar:
         self.max_iter = max_iter
         self.search_radius = search_radius
         self.nodes = [self.start]
+        self.goal_reached = False
 
     def get_random_node(self):
         x = random.uniform(0, self.parking_lot.lot_width)
@@ -93,8 +94,13 @@ class RRTStar:
                     self.goal = final_node
                     self.goal.parent = new_node
                     self.nodes.append(self.goal)
+                    self.goal_reached = True
                     print("Goal Reached")
                     break
+
+        if not self.goal_reached:
+            print("Goal Not Reached")
+            return [], []
 
         return self.generate_final_course()
 
@@ -133,9 +139,15 @@ def main():
 
     rrt_star = RRTStar(start_pose, goal_pose, parking_lot)
     rx, ry = rrt_star.search_route()
-    plt.plot(rx, ry, "-r")
-    plt.pause(0.001)
-    plt.show()
+
+    if not rx and not ry:
+        print("Goal not reached. No path found.")
+    else:
+        plt.plot(rx, ry, "-r", label="Planned Path")
+
+        plt.legend()
+        plt.pause(0.001)
+        plt.show()
 
 
 if __name__ == "__main__":

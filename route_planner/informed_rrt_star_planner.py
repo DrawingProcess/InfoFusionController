@@ -21,6 +21,7 @@ class InformedRRTStar:
         self.c_min = np.linalg.norm(np.array([self.start.x, self.start.y]) - np.array([self.goal.x, self.goal.y]))
         self.C = self.rotation_to_world_frame()
         self.show_eclipse = show_eclipse  # Flag to enable/disable eclipse drawing
+        self.goal_reached = False
 
     def rotation_to_world_frame(self):
         a1 = np.array([self.goal.x - self.start.x, self.goal.y - self.start.y])
@@ -130,10 +131,17 @@ class InformedRRTStar:
                     self.goal.parent = new_node
                     self.nodes.append(self.goal)
                     self.c_best = self.goal.cost  # Update the best cost
+                    self.goal_reached = True  # Mark goal as reached
                     print("Goal Reached")
+                    break
 
             if show_process:
                 self.plot_process(new_node)
+
+        # 목표에 도달하지 못한 경우 빈 경로 반환
+        if not self.goal_reached:
+            print("Goal Not Reached")
+            return [], []
 
         return self.generate_final_course()
 
@@ -194,9 +202,15 @@ def main():
 
     informed_rrt_star = InformedRRTStar(start_pose, goal_pose, parking_lot, show_eclipse=True)
     rx, ry = informed_rrt_star.search_route(show_process=True)
-    plt.plot(rx, ry, "-r")
-    plt.pause(0.001)
-    plt.show()
+
+    if not rx and not ry:
+        print("Goal not reached. No path found.")
+    else:
+        plt.plot(rx, ry, "-r", label="Planned Path")
+
+        plt.legend()
+        plt.pause(0.001)
+        plt.show()
 
 
 if __name__ == "__main__":
