@@ -25,10 +25,8 @@ class InformedRRTSmoothStar(InformedRRTStar):
         self.goal_reached = False  # Goal reached flag
 
     def search_route(self, show_process=True):
-        super().search_route(show_process)
-
         # Generate and optimize the final course
-        rx, ry = self.generate_final_course()
+        rx, ry = super().search_route(show_process)
         theta_star = ThetaStar(self.map_instance)
         path_nodes = [Node(x, y, 0) for x, y in zip(rx, ry)]
         optimized_path_nodes = theta_star.optimize_path(path_nodes)

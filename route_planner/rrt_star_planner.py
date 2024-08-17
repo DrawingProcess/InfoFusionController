@@ -21,7 +21,7 @@ class RRTStar:
     def is_within_map_instance(self, node):
         return 0 <= node.x <= self.map_instance.lot_width and 0 <= node.y <= self.map_instance.lot_height
 
-    def sample(self):
+    def sample(self, path_region=None):
         x = random.uniform(0, self.map_instance.lot_width)
         y = random.uniform(0, self.map_instance.lot_height)
         return Node(x, y, 0.0)
@@ -81,9 +81,9 @@ class RRTStar:
                     near_node.parent = new_node
                     near_node.cost = cost
 
-    def search_route(self, show_process=True):
+    def search_route(self, show_process=True, path_region=None):
         for _ in range(self.max_iter):
-            rand_node = self.sample()
+            rand_node = self.sample(path_region)
             nearest_node = self.nodes[self.get_nearest_node_index(rand_node)]
             new_node = self.steer(nearest_node, rand_node, extend_length=self.search_radius)
 

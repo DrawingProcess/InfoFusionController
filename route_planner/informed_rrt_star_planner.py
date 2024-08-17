@@ -31,7 +31,7 @@ class InformedRRTStar(RRTStar):
         a2 = np.array([-a1[1], a1[0]])
         return np.vstack((a1, a2)).T
 
-    def sample(self):
+    def sample(self, path_region=None):
         if self.c_best < float("inf"):
             while True:
                 x_ball = self.sample_unit_ball()
@@ -41,7 +41,7 @@ class InformedRRTStar(RRTStar):
                 if self.is_within_map_instance(x_rand_node):
                     return x_rand_node
         else:
-            return super().sample()
+            return super().sample(path_region)
 
     def sample_unit_ball(self):
         a = random.random()
