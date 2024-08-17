@@ -104,13 +104,29 @@ class ParkingLot:
 
     def ccw(self, A, B, C):
         return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])
+    
+
+    def plot_map(self, path=None):
+        obstacle_x = [x for x, y in self.obstacles]
+        obstacle_y = [y for x, y in self.obstacles]
+        plt.plot(obstacle_x, obstacle_y, ".k")  # 장애물은 검은색 사각형으로 표시
+        # plt.plot(obstacle_x, obstacle_y, "sk")  # 장애물은 검은색 사각형으로 표시
+
+        # Plot the obstacle lines
+        for line in self.obstacle_lines:
+            x_values = [line[0][0], line[1][0]]
+            y_values = [line[0][1], line[1][1]]
+            plt.plot(x_values, y_values, "k-")  # 장애물 라인은 검은 실선으로 표시
+
+        if path:
+            path_x = [x for x, y in path]
+            path_y = [y for x, y in path]
+            plt.plot(path_x, path_y, "-or")  # 경로는 빨간색 원으로 연결된 선으로 표시
 
 if __name__ == "__main__":
     # 주차장의 크기를 설정 (예: lot_width=120, lot_height=100 등으로 설정 가능)
     parking_lot = ParkingLot(lot_width=120, lot_height=100)
-    obstacle_x = [obstacle[0] for obstacle in parking_lot.obstacles]
-    obstacle_y = [obstacle[1] for obstacle in parking_lot.obstacles]
-    plt.plot(obstacle_x, obstacle_y, ".k")
+    parking_lot.plot_map()
     plt.xlim(-1, parking_lot.lot_width + 1)
     plt.ylim(-1, parking_lot.lot_height + 1)
     plt.title("Parking Lot")

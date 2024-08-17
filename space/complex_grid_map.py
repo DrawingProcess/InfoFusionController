@@ -110,23 +110,30 @@ class ComplexGridMap:
     def plot_map(self, path=None):
         obstacle_x = [x for x, y in self.obstacles]
         obstacle_y = [y for x, y in self.obstacles]
-        plt.plot(obstacle_x, obstacle_y, "sk")  # 장애물은 검은색 사각형으로 표시
+        plt.plot(obstacle_x, obstacle_y, ".k")  # 장애물은 검은색 사각형으로 표시
+        # plt.plot(obstacle_x, obstacle_y, "sk")  # 장애물은 검은색 사각형으로 표시
+
+        # Plot the obstacle lines
+        for line in self.obstacle_lines:
+            x_values = [line[0][0], line[1][0]]
+            y_values = [line[0][1], line[1][1]]
+            plt.plot(x_values, y_values, "k-")  # 장애물 라인은 검은 실선으로 표시
 
         if path:
             path_x = [x for x, y in path]
             path_y = [y for x, y in path]
             plt.plot(path_x, path_y, "-or")  # 경로는 빨간색 원으로 연결된 선으로 표시
 
-        plt.xlim(-1, self.lot_width + 1)
-        plt.ylim(-1, self.lot_height + 1)
-        plt.title("Complex Grid Map with Path")
-        plt.grid(True)
-        plt.xlabel("X [m]")
-        plt.ylabel("Y [m]")
-        plt.axis("equal")
-        plt.show()
-
 if __name__ == "__main__":
     # 맵 크기를 지정하여 GridMap 생성 (예: 100x75)
     grid_map = ComplexGridMap(lot_width=100, lot_height=80)
     grid_map.plot_map()
+
+    plt.xlim(-1, grid_map.lot_width + 1)
+    plt.ylim(-1, grid_map.lot_height + 1)
+    plt.title("Complex Grid Map with Path")
+    plt.grid(True)
+    plt.xlabel("X [m]")
+    plt.ylabel("Y [m]")
+    plt.axis("equal")
+    plt.show()
