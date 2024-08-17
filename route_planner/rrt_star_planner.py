@@ -18,7 +18,10 @@ class RRTStar:
         self.nodes = [self.start]
         self.goal_reached = False
 
-    def get_random_node(self):
+    def is_within_map_instance(self, node):
+        return 0 <= node.x <= self.map_instance.lot_width and 0 <= node.y <= self.map_instance.lot_height
+
+    def sample(self):
         x = random.uniform(0, self.map_instance.lot_width)
         y = random.uniform(0, self.map_instance.lot_height)
         return Node(x, y, 0.0)
@@ -50,6 +53,13 @@ class RRTStar:
     def is_collision_free(self, node1, node2):
         x1, y1 = node1.x, node1.y
         x2, y2 = node2.x, node2.y
+
+        # Check if the path crosses any obstacle line
+        for line in self.map_instance.obstacle_lines:
+            if self.map_instance.intersect(line, [(x1, y1), (x2, y2)]):
+                return False
+
+        # Check if the path crosses any obstacle grid cell
         return self.map_instance.is_not_crossed_obstacle((round(x1), round(y1)), (round(x2), round(y2)))
 
     def search_best_parent(self, new_node, near_nodes):
@@ -71,9 +81,9 @@ class RRTStar:
                     near_node.parent = new_node
                     near_node.cost = cost
 
-    def search_route(self):
+    def search_route(self, show_process=True):
         for _ in range(self.max_iter):
-            rand_node = self.get_random_node()
+            rand_node = self.sample()
             nearest_node = self.nodes[self.get_nearest_node_index(rand_node)]
             new_node = self.steer(nearest_node, rand_node, extend_length=self.search_radius)
 
@@ -100,6 +110,9 @@ class RRTStar:
                     print("Goal Reached")
                     break
 
+            if show_process:
+                self.plot_process(new_node)
+
         if not self.goal_reached:
             print("Goal Not Reached")
             return [], []
@@ -117,6 +130,14 @@ class RRTStar:
         ry.append(self.start.y)
         return rx[::-1], ry[::-1]
 
+    def plot_process(self, node):
+        plt.plot(node.x, node.y, "xc")
+        plt.gcf().canvas.mpl_connect(
+            "key_release_event",
+            lambda event: [exit(0) if event.key == "escape" else None],
+        )
+        if len(self.nodes) % 10 == 0:
+            plt.pause(0.001)
 
 def main(map_type="ComplexGridMap"):
     # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
@@ -125,15 +146,12 @@ def main(map_type="ComplexGridMap"):
     else:  # Default to ComplexGridMap
         map_instance = ComplexGridMap(lot_width=100, lot_height=75)
 
-    obstacle_x = [obstacle[0] for obstacle in map_instance.obstacles]
-    obstacle_y = [obstacle[1] for obstacle in map_instance.obstacles]
-    plt.plot(obstacle_x, obstacle_y, ".k")
-
     # 유효한 시작과 목표 좌표 설정
     start_pose = map_instance.get_random_valid_start_position()
     goal_pose = map_instance.get_random_valid_goal_position()
     print(f"Start RRT* Route Planner (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
+    map_instance.plot_map()
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
     plt.xlim(-1, map_instance.lot_width + 1)

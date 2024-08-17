@@ -20,8 +20,9 @@ from space.complex_grid_map import ComplexGridMap
 
 from route_planner.geometry import Pose, Node
 from route_planner.theta_star_planner import ThetaStar  # Assume Theta* is implemented here
+from route_planner.informed_rrt_star_planner import InformedRRTStar
 
-class InformedTRRTStar:
+class InformedTRRTStar(InformedRRTStar):
     def __init__(self, start, goal, map_instance, max_iter=300, search_radius=10, show_eclipse=False):
         self.start = Node(start.x, start.y, 0.0)
         self.goal = Node(goal.x, goal.y, 0.0)
@@ -34,12 +35,6 @@ class InformedTRRTStar:
         self.c_min = np.linalg.norm(np.array([self.start.x, self.start.y]) - np.array([self.goal.x, self.goal.y]))
         self.C = self.rotation_to_world_frame()
         self.show_eclipse = show_eclipse  # Flag to enable/disable eclipse drawing
-
-    def rotation_to_world_frame(self):
-        a1 = np.array([self.goal.x - self.start.x, self.goal.y - self.start.y])
-        a1 = a1 / np.linalg.norm(a1)
-        a2 = np.array([-a1[1], a1[0]])
-        return np.vstack((a1, a2)).T
 
     def narrow_sample(self, x_path, y_path):
         # Narrow the sampling region based on the initial Theta* path
@@ -70,17 +65,6 @@ class InformedTRRTStar:
                 return True
         return False
 
-    def sample_unit_ball(self):
-        a = random.random()
-        b = random.random()
-        if b < a:
-            a, b = b, a
-        sample = np.array([b * math.cos(2 * math.pi * a / b), b * math.sin(2 * math.pi * a / b)])
-        return sample
-
-    def is_within_map_instance(self, node):
-        return 0 <= node.x <= self.map_instance.lot_width and 0 <= node.y <= self.map_instance.lot_height
-
     def get_random_node(self, path_region=None):
         while True:
             x = random.uniform(0, self.map_instance.lot_width)
@@ -88,42 +72,6 @@ class InformedTRRTStar:
             node = Node(x, y, 0.0)
             if path_region is None or self.is_within_region(node, path_region):
                 return node
-
-    def get_nearest_node_index(self, node):
-        dlist = [(n.x - node.x) ** 2 + (n.y - node.y) ** 2 for n in self.nodes]
-        min_index = dlist.index(min(dlist))
-        return min_index
-
-    def steer(self, from_node, to_node, extend_length=float("inf")):
-        new_node = Node(from_node.x, from_node.y, from_node.cost, from_node)
-        d, theta = self.calc_distance_and_angle(new_node, to_node)
-
-        extend_length = min(d, extend_length)
-
-        new_node.x += extend_length * math.cos(theta)
-        new_node.y += extend_length * math.sin(theta)
-        new_node.cost += extend_length
-
-        return new_node
-
-    def calc_distance_and_angle(self, from_node, to_node):
-        dx = to_node.x - from_node.x
-        dy = to_node.y - from_node.y
-        distance = math.hypot(dx, dy)
-        angle = math.atan2(dy, dx)
-        return distance, angle
-
-    def is_collision_free(self, node1, node2):
-        x1, y1 = node1.x, node1.y
-        x2, y2 = node2.x, node2.y
-
-        # Check if the path crosses any obstacle line
-        for line in self.map_instance.obstacle_lines:
-            if self.map_instance.intersect(line, [(x1, y1), (x2, y2)]):
-                return False
-
-        # Check if the path crosses any obstacle grid cell
-        return self.map_instance.is_not_crossed_obstacle((round(x1), round(y1)), (round(x2), round(y2)))
 
     def search_best_parent(self, new_node, near_nodes):
         best_parent = None
@@ -141,14 +89,6 @@ class InformedTRRTStar:
     def heuristic(self, node, goal):
         # Simple Euclidean distance as a heuristic
         return math.hypot(goal.x - node.x, goal.y - node.y)
-
-    def rewire(self, new_node, near_nodes):
-        for near_node in near_nodes:
-            if self.is_collision_free(new_node, near_node):
-                cost = new_node.cost + math.hypot(new_node.x - near_node.x, new_node.y - near_node.y)
-                if cost < near_node.cost:
-                    near_node.parent = new_node
-                    near_node.cost = cost
 
     def search_route(self, show_process=True):
         # Step 1: Use Theta* to find an initial path
@@ -205,17 +145,6 @@ class InformedTRRTStar:
 
         return rx, ry, rx_opt, ry_opt
 
-    def generate_final_course(self):
-        rx, ry = [], []
-        node = self.goal
-        while node.parent is not None:
-            rx.append(node.x)
-            ry.append(node.y)
-            node = node.parent
-        rx.append(self.start.x)
-        ry.append(self.start.y)
-        return rx[::-1], ry[::-1]
-
     def smooth_path(self, path_x, path_y):
         smooth_x, smooth_y = [path_x[0]], [path_y[0]]
         i = 0
@@ -229,29 +158,6 @@ class InformedTRRTStar:
                     break
         return smooth_x, smooth_y
 
-    def plot_process(self, node):
-        plt.plot(node.x, node.y, "xc")
-        if self.show_eclipse and self.c_best < float("inf"):
-            self.plot_ellipse()
-        plt.gcf().canvas.mpl_connect(
-            "key_release_event",
-            lambda event: [exit(0) if event.key == "escape" else None],
-        )
-        if len(self.nodes) % 10 == 0:
-            plt.pause(0.001)
-
-    def plot_ellipse(self):
-        U, s, Vt = np.linalg.svd(np.dot(self.C, np.diag([self.c_best / 2.0, math.sqrt(self.c_best**2 - self.c_min**2) / 2.0])))
-        angle = math.atan2(U[1, 0], U[0, 0])
-        angle = angle * 180.0 / math.pi
-
-        a = s[0]  # Semi-major axis
-        b = s[1]  # Semi-minor axis
-
-        # Plot the ellipse representing the sampling area
-        ellipse = plt.matplotlib.patches.Ellipse(xy=self.x_center, width=a * 2.0, height=b * 2.0, angle=angle, edgecolor='b', fc='None', lw=1, ls='--')
-        plt.gca().add_patch(ellipse)
-
 def main(map_type="ComplexGridMap"):
     # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
     if map_type == "ParkingLot":
@@ -259,15 +165,12 @@ def main(map_type="ComplexGridMap"):
     else:  # Default to ComplexGridMap
         map_instance = ComplexGridMap(lot_width=100, lot_height=75)
 
-    obstacle_x = [obstacle[0] for obstacle in map_instance.obstacles]
-    obstacle_y = [obstacle[1] for obstacle in map_instance.obstacles]
-    plt.plot(obstacle_x, obstacle_y, ".k")
-
     # 유효한 시작과 목표 좌표 설정
     start_pose = map_instance.get_random_valid_start_position()
     goal_pose = map_instance.get_random_valid_goal_position()
     print(f"Start Informed-TRRT* Route Planner (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
+    map_instance.plot_map()
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
     plt.xlim(-1, map_instance.lot_width + 1)

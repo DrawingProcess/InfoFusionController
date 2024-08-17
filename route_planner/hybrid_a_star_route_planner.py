@@ -161,15 +161,12 @@ def main(map_type="ComplexGridMap"):
     else:  # Default to ComplexGridMap
         map_instance = ComplexGridMap(lot_width=100, lot_height=75)
 
-    obstacle_x = [obstacle[0] for obstacle in map_instance.obstacles]
-    obstacle_y = [obstacle[1] for obstacle in map_instance.obstacles]
-    plt.plot(obstacle_x, obstacle_y, ".k")
-
     # 유효한 시작과 목표 좌표 설정
     start_pose = map_instance.get_random_valid_start_position()
     goal_pose = map_instance.get_random_valid_goal_position()
     print(f"Start Hybrid A Star Route Planner (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
+    map_instance.plot_map()
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
     plt.xlim(-1, map_instance.lot_width + 1)
