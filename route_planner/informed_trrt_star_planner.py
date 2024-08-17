@@ -116,6 +116,13 @@ class InformedTRRTStar:
     def is_collision_free(self, node1, node2):
         x1, y1 = node1.x, node1.y
         x2, y2 = node2.x, node2.y
+
+        # Check if the path crosses any obstacle line
+        for line in self.map_instance.obstacle_lines:
+            if self.map_instance.intersect(line, [(x1, y1), (x2, y2)]):
+                return False
+
+        # Check if the path crosses any obstacle grid cell
         return self.map_instance.is_not_crossed_obstacle((round(x1), round(y1)), (round(x2), round(y2)))
 
     def search_best_parent(self, new_node, near_nodes):
