@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 
 from space.parking_lot import ParkingLot
 from space.complex_grid_map import ComplexGridMap
-
 from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
 from utils import calculate_angle, transform_arrays_with_angles
 
@@ -30,6 +29,8 @@ class MPCController:
     def compute_cost(self, predicted_states, ref_trajectory):
         cost = 0
         for i in range(len(predicted_states)):
+            if i >= len(ref_trajectory):
+                break
             state = predicted_states[i]
             ref_state = ref_trajectory[i]
             cost += np.sum((state - ref_state)**2)
@@ -43,19 +44,27 @@ class MPCController:
         best_control = None
         min_cost = float('inf')
 
-        for v_ref in np.linspace(-1, 1, 5):
-            for delta_ref in np.linspace(-np.pi/4, np.pi/4, 5):
+        for v_ref in np.linspace(-1, 1, 7):  # Increased resolution for finer control
+            for delta_ref in np.linspace(-np.pi/6, np.pi/6, 7):  # Adjusted steering angle range
                 predicted_states = []
                 state = current_state
-                for i in range(self.horizon):
+                for _ in range(self.horizon):
                     state = self.predict(state, (v_ref, delta_ref))
                     predicted_states.append(state)
+
+                # Ensure that the predicted states and reference trajectory have matching lengths
+                if len(predicted_states) > len(ref_trajectory):
+                    predicted_states = predicted_states[:len(ref_trajectory)]
 
                 if all(self.is_collision_free(s) for s in predicted_states):
                     cost = self.compute_cost(predicted_states, ref_trajectory)
                     if cost < min_cost:
                         min_cost = cost
                         best_control = (v_ref, delta_ref)
+
+        # If no control was found, default to a small forward motion
+        if best_control is None:
+            best_control = (0.1, 0.0)
 
         return best_control
 
@@ -85,6 +94,11 @@ class MPCController:
             current_state = self.apply_control(current_state, control_input)
             trajectory.append(current_state)
 
+            # Stop if close enough to the goal
+            if np.linalg.norm(current_state[:2] - ref_trajectory[-1][:2]) < 2.0:
+                print("Reached near the goal")
+                break
+
             # Plot current state
             plt.plot(current_state[0], current_state[1], "xr")
             plt.pause(0.001)
@@ -99,20 +113,18 @@ def main(map_type="ComplexGridMap"):
     else:  # Default to ComplexGridMap
         map_instance = ComplexGridMap(lot_width=100, lot_height=75)
 
-    obstacle_x = [obstacle[0] for obstacle in map_instance.obstacles]
-    obstacle_y = [obstacle[1] for obstacle in map_instance.obstacles]
-    plt.plot(obstacle_x, obstacle_y, ".k")
-
     # 유효한 시작과 목표 좌표 설정
     start_pose = map_instance.get_random_valid_start_position()
     goal_pose = map_instance.get_random_valid_goal_position()
-    print(f"Start Adaptive MPC Controller (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
+    print(f"Start MPC Controller (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
+    # 맵과 장애물 및 시작/목표 지점을 표시
+    map_instance.plot_map()
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
     plt.xlim(-1, map_instance.lot_width + 1)
     plt.ylim(-1, map_instance.lot_height + 1)
-    plt.title("Adaptive MPC Route Planner")
+    plt.title("MPC Route Planner")
     plt.xlabel("X [m]")
     plt.ylabel("Y [m]")
     plt.grid(True)
@@ -120,11 +132,14 @@ def main(map_type="ComplexGridMap"):
 
     # Create Informed TRRT* planner
     informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
-    rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
-
+    
     # Ensure the route generation is completed
     try:
         rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
+        if len(rx_opt) == 0 or len(ry_opt) == 0:
+            print("TRRT* was unable to generate a valid path.")
+            return
+
     except Exception as e:
         print(f"Error in route generation: {e}")
         return
@@ -145,7 +160,7 @@ def main(map_type="ComplexGridMap"):
     # Follow the trajectory using the MPC controller
     trajectory = mpc_controller.follow_trajectory(start_pose, ref_trajectory)
     
-    plt.plot(trajectory[:, 0], trajectory[:, 1], "r-", label="MPC Path")
+    plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label="MPC Path")
     plt.legend()
     plt.show()
 
