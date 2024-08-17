@@ -7,7 +7,7 @@ def calculate_angle(x_start, y_start, x_end, y_end):
     dy = y_end - y_start
     return math.atan2(dy, dx)
 
-def transform_arrays_with_angles(x_array, y_array, num_points=50, velocity=1.0):
+def transform_arrays_with_angles(x_array, y_array, num_points=50, velocity=1.0, last_segment_factor=5):
     x_array = np.array(x_array)
     y_array = np.array(y_array)
     
@@ -34,9 +34,16 @@ def transform_arrays_with_angles(x_array, y_array, num_points=50, velocity=1.0):
         # Average angle between current and next segment
         theta_avg = (theta_current + theta_next) / 2.0
         
-        # Interpolation
-        x_interp = np.linspace(x_start, x_end, num=num_points, endpoint=False)
-        y_interp = np.linspace(y_start, y_end, num=num_points, endpoint=False)
+        # Adjust the number of points for the last segment
+        if i == n - 2:
+            # Increase the number of interpolation points for the last segment
+            num_points_last = num_points * last_segment_factor
+            x_interp = np.linspace(x_start, x_end, num=num_points_last, endpoint=False)
+            y_interp = np.linspace(y_start, y_end, num=num_points_last, endpoint=False)
+        else:
+            # Regular interpolation for other segments
+            x_interp = np.linspace(x_start, x_end, num=num_points, endpoint=False)
+            y_interp = np.linspace(y_start, y_end, num=num_points, endpoint=False)
         
         # Add the last point of the segment explicitly
         x_interp = np.append(x_interp, x_end)
