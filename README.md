@@ -27,7 +27,7 @@ ADLAB-PLANNING
 |       theta_star_planner.py                   # route planner: theta star 
 |
 \---space
-        grid_map.py             # base grid map
-        complex_grid_map.py     # gridmap: random obstacle grid map
-        parking_lot.py          # gridmap: parking lot grid map
+        grid_map.py                             # base grid map
+        complex_grid_map.py                     # gridmap: random obstacle grid map
+        parking_lot.py                          # gridmap: parking lot grid map
 ```
