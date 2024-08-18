@@ -82,6 +82,7 @@ class RRTStar:
                     near_node.cost = cost
 
     def search_route(self, show_process=True, path_region=None):
+        self.goal_reached = False
         for _ in range(self.max_iter):
             rand_node = self.sample(path_region)
             nearest_node = self.nodes[self.get_nearest_node_index(rand_node)]
