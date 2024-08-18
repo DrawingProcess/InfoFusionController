@@ -3,7 +3,6 @@
 ## Code Structure
 ```
 ADLAB-PLANNING
-|   algotithm_speed_test.py                     # Comparison of algorithmic speed performance
 |   main.py                                     # main: Multiple planning, control algorithms available
 |   utils.py                                    # utils: calculate, tranform, ...
 |
@@ -26,8 +25,10 @@ ADLAB-PLANNING
 |       rrt_star_planner.py                     # route planner: rrt star
 |       theta_star_planner.py                   # route planner: theta star 
 |
-\---space
-        grid_map.py                             # base grid map
-        complex_grid_map.py                     # gridmap: random obstacle grid map
-        parking_lot.py                          # gridmap: parking lot grid map
++---space
+|       grid_map.py                             # gridmap: base grid map
+|       complex_grid_map.py                     # gridmap: random obstacle grid map
+|       parking_lot.py                          # gridmap: parking lot grid map
+\---test
+        algotithm_speed_test.py                 # test: Comparison of algorithmic speed performance
 ```
