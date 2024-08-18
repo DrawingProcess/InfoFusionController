@@ -21,7 +21,7 @@ class AdaptiveMPCController(MPCController):
         else:
             self.horizon = max(self.horizon - 1, 5)
 
-    def follow_trajectory(self, start_pose, ref_trajectory):
+    def follow_trajectory(self, start_pose, ref_trajectory, show_process=False):
         """
         Follow the reference trajectory using the Adaptive MPC controller.
 
@@ -58,8 +58,9 @@ class AdaptiveMPCController(MPCController):
                 break
 
             # Plot current state
-            plt.plot(current_state[0], current_state[1], "xr")
-            plt.pause(0.001)
+            if show_process:
+                plt.plot(current_state[0], current_state[1], "xr")
+                plt.pause(0.001)
 
         return np.array(trajectory)
 
@@ -87,13 +88,14 @@ def main(map_type="ComplexGridMap"):
     plt.ylabel("Y [m]")
     plt.grid(True)
     plt.axis("equal")
-
+ 
     # Create Informed TRRT* planner
     informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
     
+    show_process = True
     # Ensure the route generation is completed
     try:
-        rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
+        rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=show_process)
         if len(rx_opt) == 0 or len(ry_opt) == 0:
             print("TRRT* was unable to generate a valid path.")
             return
@@ -121,7 +123,7 @@ def main(map_type="ComplexGridMap"):
     adaptive_mpc = AdaptiveMPCController(horizon=10, dt=0.1, map_instance=map_instance, wheelbase=wheelbase)
 
     # Follow the trajectory using the Adaptive MPC controller
-    trajectory = adaptive_mpc.follow_trajectory(start_pose, ref_trajectory)
+    trajectory = adaptive_mpc.follow_trajectory(start_pose, ref_trajectory, show_process=show_process)
 
     # Plot the MPC Path
     plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label="Adaptive MPC Path")
