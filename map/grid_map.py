@@ -35,7 +35,7 @@ class GridMap:
         return x + y * self.lot_width
 
     def is_obstacle(self, x, y):
-        return self.grid[y][x] == 1
+        return (x, y) in self.obstacles
 
     def is_valid_position(self, x, y):
         # 주어진 좌표가 장애물이 아니고 맵 범위 내에 있는지 확인
@@ -102,6 +102,43 @@ class GridMap:
             path_x = [x for x, y in path]
             path_y = [y for x, y in path]
             plt.plot(path_x, path_y, "-or")  # 경로는 빨간색 원으로 연결된 선으로 표시
+
+    def create_random_obstacles_in_path(self, ref_trajectory, n=3, box_size=(5, 5)):
+        for _ in range(n):
+            idx = random.randint(len(ref_trajectory)//4, len(ref_trajectory)*3//4 - 1)
+            x, y, _, _ = ref_trajectory[idx]
+            if self.is_valid_position(x, y):
+                pos = random.randint(0, box_size[0] // 2)
+                self.add_obstacle_box(x - pos, y - pos, box_size[0], box_size[1])
+
+    def add_obstacle_box(self, x, y, width, height):
+        """주어진 위치에 장애물 박스 추가"""
+        valid_points = []
+
+        """주어진 위치에 장애물 박스 추가"""
+        for i in range(width):
+            for j in range(height):
+                if self.is_valid_position(x + i, y + j):
+                    valid_points.append((x + i, y + j))
+                    self.obstacles.append((x + i, y + j))
+
+        if not valid_points:
+            return  # 유효한 좌표가 없으면 종료
+
+        # 유효한 영역의 최소 및 최대 좌표 계산
+        min_x = min(p[0] for p in valid_points)
+        max_x = max(p[0] for p in valid_points)
+        min_y = min(p[1] for p in valid_points)
+        max_y = max(p[1] for p in valid_points)
+
+        # 유효한 영역의 경계를 obstacle_lines에 추가
+        self.obstacle_lines.extend([
+            [(min_x, min_y), (max_x, min_y)],  # 상단 라인
+            [(min_x, min_y), (min_x, max_y)],  # 좌측 라인
+            [(max_x, min_y), (max_x, max_y)],  # 우측 라인
+            [(min_x, max_y), (max_x, max_y)]   # 하단 라인
+        ])
+        print(f"Added obstacle box at: ({min_x}, {min_y}) with size {width}x{height}")
 
 if __name__ == "__main__":
     # 맵 크기를 지정하여 GridMap 생성 (예: 100x75)
