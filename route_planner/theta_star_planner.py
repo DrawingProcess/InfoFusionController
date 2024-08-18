@@ -2,8 +2,8 @@ import heapq
 import math
 import matplotlib.pyplot as plt
 
-from space.parking_lot import ParkingLot
-from space.complex_grid_map import ComplexGridMap
+from map.parking_lot import ParkingLot
+from map.complex_grid_map import ComplexGridMap
 from route_planner.geometry import Pose, Node
 
 class ThetaStar:

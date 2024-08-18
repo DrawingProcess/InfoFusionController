@@ -1,5 +1,5 @@
 """
-Free Space (Parking Lot) Hybrid A Star Route Planner
+Free map (Parking Lot) Hybrid A Star Route Planner
 
 Reference:
 PythonRobotics A* grid planning (author: Atsushi Sakai(@Atsushi_twi) / Nikos Kanargias (nkana@tee.gr))
@@ -9,8 +9,8 @@ https://github.com/AtsushiSakai/PythonRobotics/blob/master/PathPlanning/AStar/a_
 import math
 import matplotlib.pyplot as plt
 
-from space.parking_lot import ParkingLot
-from space.complex_grid_map import ComplexGridMap
+from map.parking_lot import ParkingLot
+from map.complex_grid_map import ComplexGridMap
 
 from route_planner.geometry import Pose
 

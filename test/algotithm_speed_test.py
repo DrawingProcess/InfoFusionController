@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot as plt
 
 from route_planner.geometry import Pose
-from space.parking_lot import ParkingLot
+from map.parking_lot import ParkingLot
 
 from route_planner.a_star_route_planner import AStarRoutePlanner
 from route_planner.hybrid_a_star_route_planner import HybridAStarRoutePlanner

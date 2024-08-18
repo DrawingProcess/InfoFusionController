@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import random
 import math
 
-from space.grid_map import GridMap
+from map.grid_map import GridMap
 
 from route_planner.geometry import Pose
 

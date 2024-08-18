@@ -2,7 +2,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 
-from space.parking_lot import ParkingLot
+from map.parking_lot import ParkingLot
 from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
 from control.mpc_adaptive import AdaptiveMPCController
 from control.mpc_basic import MPCController

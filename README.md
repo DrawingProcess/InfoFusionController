@@ -13,11 +13,16 @@ ADLAB-PLANNING
 |       pure_pursuit.py                         # control: pure pursuit
 |       stanley.py                              # control: stanley
 |
-+---results
++---map
+|       grid_map.py                             # map: base grid map
+|       complex_grid_map.py                     # map: random obstacle grid map
+|       parking_lot.py                          # map: parking lot grid map
+|
++---results                                     # results: stanley
 |
 +---route_planner
 |       a_star_route_planner.py                 # route planner: a star 
-|       geometry.py                             # Class Pose, Node
+|       geometry.py                             # route planner: Pose, Node Class
 |       hybrid_a_star_route_planner.py          # route planner: hybrid a star 
 |       informed_rrt_star_planner.py            # route planner: informed rrt star
 |       informed_rrt_star_smooth_planner.py     # route planner: informed rrt star (smoothing approach)
@@ -25,10 +30,6 @@ ADLAB-PLANNING
 |       rrt_star_planner.py                     # route planner: rrt star
 |       theta_star_planner.py                   # route planner: theta star 
 |
-+---space
-|       grid_map.py                             # gridmap: base grid map
-|       complex_grid_map.py                     # gridmap: random obstacle grid map
-|       parking_lot.py                          # gridmap: parking lot grid map
 \---test
         algotithm_speed_test.py                 # test: Comparison of algorithmic speed performance
 ```
