@@ -1,42 +1,90 @@
+import argparse
 import numpy as np
 import math
 import matplotlib.pyplot as plt
 
 from map.parking_lot import ParkingLot
-from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
-from control.mpc_adaptive import AdaptiveMPCController
+from map.fixed_grid_map import FixedGridMap
+from map.complex_grid_map import ComplexGridMap
+
+from route_planner.geometry import Pose
+from route_planner.a_star_route_planner import AStarRoutePlanner
+from route_planner.hybrid_a_star_route_planner import HybridAStarRoutePlanner
+from route_planner.theta_star_planner import ThetaStar
+from route_planner.rrt_star_planner import RRTStar
+from route_planner.informed_rrt_star_planner import InformedRRTStar
+from route_planner.informed_rrt_star_smooth_planner import InformedRRTSmoothStar
+from route_planner.informed_trrt_star_planner import InformedTRRTStar
+
+from control.pure_pursuit import PurePursuitController
+from control.stanley import StanleyController
 from control.mpc_basic import MPCController
+from control.mpc_adaptive import AdaptiveMPCController
 
 from utils import calculate_angle, transform_arrays_with_angles
 
 def main():
-    parking_lot = ParkingLot()
-    obstacle_x = [obstacle[0] for obstacle in parking_lot.obstacles]
-    obstacle_y = [obstacle[1] for obstacle in parking_lot.obstacles]
-    plt.plot(obstacle_x, obstacle_y, ".k")
+    parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")
+    parser.add_argument('--map', type=str, default='fixed_grid', choices=['parking_lot', 'fixed_grid', 'complex_grid'], help='Choose the map type.')
+    parser.add_argument('--route_planner', type=str, default='informed_trrt_star', choices=[
+        'a_star', 'hybrid_a_star', 'theta_star', 'rrt_star', 'informed_rrt_star', 'informed_rrt_smooth_star', 'informed_trrt_star'
+    ], help='Choose the route planner.')
+    parser.add_argument('--controller', type=str, default='mpc_basic', choices=['pure_pursuit', 'stanley', 'mpc_basic', 'adaptive_mpc'], help='Choose the controller.')
+    args = parser.parse_args()
 
-    # Start and goal pose
-    start_pose = Pose(14.0, 4.0, np.radians(0))
-    goal_pose = Pose(50.0, 38.0, np.radians(90))
-    print(f"Start Adaptive MPC Controller (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
+    # Map selection using dictionary
+    map_options = {
+        'parking_lot': ParkingLot,
+        'fixed_grid': FixedGridMap,
+        'complex_grid': ComplexGridMap
+    }
+    map_instance = map_options[args.map]()
 
+    # fixed pose
+    start_pose = Pose(3, 5, math.radians(0))
+    goal_pose = Pose(5, 15, math.radians(0))
+    # random pose
+    # start_pose = map_instance.get_random_valid_start_position()
+    # goal_pose = map_instance.get_random_valid_goal_position()
+    print(f"Start {args.controller} Controller (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
+    # Route planner selection using dictionary
+    route_planner_options = {
+        'a_star': AStarRoutePlanner,
+        'hybrid_a_star': HybridAStarRoutePlanner,
+        'theta_star': ThetaStar,
+        'rrt_star': RRTStar,
+        'informed_rrt_star': InformedRRTStar,
+        'informed_rrt_smooth_star': InformedRRTSmoothStar,
+        'informed_trrt_star': InformedTRRTStar
+    }
+    route_planner = route_planner_options[args.route_planner](start_pose, goal_pose, map_instance)
+
+    # Controller selection using dictionary
+    horizon = 10  # MPC horizon
+    dt = 0.1  # Time step
+    wheelbase = 2.5  # Example wheelbase of the vehicle in meters
+    controller_options = {
+        'mpc_basic': MPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance),
+        'adaptive_mpc': AdaptiveMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance),
+        'pure_pursuit': PurePursuitController(lookahead_distance=5.0, dt=dt, wheelbase=wheelbase, map_instance=map_instance),
+        'stanley': StanleyController(k=0.1, dt=dt, wheelbase=wheelbase, map_instance=map_instance),
+    }
+    controller = controller_options[args.controller]
+
+    map_instance.plot_map()
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
-    plt.xlim(-1, parking_lot.lot_width + 1)
-    plt.ylim(-1, parking_lot.lot_height + 1)
-    plt.title("Adaptive MPC Route Planner")
+    plt.xlim(-1, map_instance.lot_width + 1)
+    plt.ylim(-1, map_instance.lot_height + 1)
+    plt.title(f"{args.controller.capitalize()} Route Planner")
     plt.xlabel("X [m]")
     plt.ylabel("Y [m]")
     plt.grid(True)
     plt.axis("equal")
 
-    # Create Informed TRRT* planner
-    informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, parking_lot, show_eclipse=False)
-    rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
-
-    # Ensure the route generation is completed
+    # Generate the route
     try:
-        rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
+        rx, ry, rx_opt, ry_opt = route_planner.search_route(show_process=False)
     except Exception as e:
         print(f"Error in route generation: {e}")
         return
@@ -44,20 +92,14 @@ def main():
     # Transform reference trajectory
     ref_trajectory = transform_arrays_with_angles(rx_opt, ry_opt)
 
-    # Plot Informed RRT* Path
-    plt.plot(rx, ry, "g--", label="Informed RRT* Path")  # Green dashed line
+    # Plot the route
+    plt.plot(rx, ry, "g--", label=f"{args.route_planner.replace('_', ' ').title()} Path")
+    plt.plot(rx_opt, ry_opt, "-r", label="Optimized Path")
 
-    # Plot Optimized Path
-    plt.plot(rx_opt, ry_opt, "-r", label="Optimized Path")  # Red solid line
-
-    # MPC Controller
-    wheelbase = 2.5  # Example wheelbase of the vehicle in meters
-    mpc_controller = AdaptiveMPCController(horizon=10, dt=0.1, parking_lot=parking_lot, wheelbase=wheelbase)
-
-    # Follow the trajectory using the MPC controller
-    trajectory = mpc_controller.follow_trajectory(start_pose, ref_trajectory)
+    # Follow the trajectory using the selected controller
+    trajectory = controller.follow_trajectory(start_pose, ref_trajectory, [goal_pose.x, goal_pose.y], show_process=True)
     
-    plt.plot(trajectory[:, 0], trajectory[:, 1], "r-", label="MPC Path")
+    plt.plot(trajectory[:, 0], trajectory[:, 1], "r-", label="Controller Path")
     plt.legend()
     plt.show()
 
