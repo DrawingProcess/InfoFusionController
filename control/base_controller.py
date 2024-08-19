@@ -143,7 +143,6 @@ class BaseController:
                 target_point = ref_trajectory[-1]
             else:
                 target_point = ref_trajectory[target_index]
-            print(target_point)
             # Check if the path to the target point is collision-free
             if not self.is_collision_free(current_state, target_point):
                 target_point = self.avoid_obstacle(current_state, target_point)

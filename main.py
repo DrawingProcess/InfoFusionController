@@ -18,14 +18,15 @@ from route_planner.informed_trrt_star_planner import InformedTRRTStar
 
 from control.pure_pursuit import PurePursuitController
 from control.stanley import StanleyController
-from control.mpc_basic import MPCController
-from control.mpc_adaptive import AdaptiveMPCController
+from control.mpc_controller import MPCController
+from control.adaptive_mpc_controller import AdaptiveMPCController
+from control.multi_purpose_mpc_controller import MultiPurposeMPCController
 
 from utils import calculate_angle, transform_arrays_with_angles
 
 def main():
     parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")
-    parser.add_argument('--map', type=str, default='fixed_grid', choices=['parking_lot', 'fixed_grid', 'complex_grid'], help='Choose the map type.')
+    parser.add_argument('--map', type=str, default='complex_grid', choices=['parking_lot', 'fixed_grid', 'complex_grid'], help='Choose the map type.')
     parser.add_argument('--route_planner', type=str, default='informed_trrt_star', choices=[
         'a_star', 'hybrid_a_star', 'theta_star', 'rrt_star', 'informed_rrt_star', 'informed_rrt_smooth_star', 'informed_trrt_star'
     ], help='Choose the route planner.')
@@ -66,6 +67,7 @@ def main():
     controller_options = {
         'mpc_basic': MPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance),
         'adaptive_mpc': AdaptiveMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance),
+        'multi_purpose_mpc': MultiPurposeMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance),
         'pure_pursuit': PurePursuitController(lookahead_distance=5.0, dt=dt, wheelbase=wheelbase, map_instance=map_instance),
         'stanley': StanleyController(k=0.1, dt=dt, wheelbase=wheelbase, map_instance=map_instance),
     }

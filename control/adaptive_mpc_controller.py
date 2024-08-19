@@ -2,16 +2,17 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 
+from utils import calculate_angle, transform_arrays_with_angles
+
 from map.parking_lot import ParkingLot
 from map.complex_grid_map import ComplexGridMap
 
-from control.mpc_basic import MPCController
+from control.mpc_controller import MPCController
 from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
-from utils import calculate_angle, transform_arrays_with_angles
 
 class AdaptiveMPCController(MPCController):
-    def __init__(self, horizon, dt, map_instance, wheelbase):
-        super().__init__(horizon, dt, map_instance, wheelbase)
+    def __init__(self, horizon, dt, wheelbase, map_instance):
+        super().__init__(horizon, dt, wheelbase, map_instance)
         self.previous_control = None
 
     def update_horizon(self, current_state, ref_trajectory):
@@ -21,7 +22,7 @@ class AdaptiveMPCController(MPCController):
         else:
             self.horizon = max(self.horizon - 1, 5)
 
-    def follow_trajectory(self, start_pose, ref_trajectory, show_process=False):
+    def follow_trajectory(self, start_pose, ref_trajectory, goal_position, show_process=False):
         """
         Follow the reference trajectory using the Adaptive MPC controller.
 
@@ -61,6 +62,13 @@ class AdaptiveMPCController(MPCController):
             if show_process:
                 plt.plot(current_state[0], current_state[1], "xr")
                 plt.pause(0.001)
+
+        # If the goal is still not reached, adjust the final position
+        if not self.is_goal_reached(current_state, goal_position):
+            print("Final adjustment to reach the goal.")
+            current_state[0], current_state[1] = goal_position
+            current_state[2] = calculate_angle(current_state[0], current_state[1], goal_position[0], goal_position[1])
+            trajectory.append(current_state)
 
         return np.array(trajectory)
 
@@ -123,7 +131,8 @@ def main(map_type="ComplexGridMap"):
     adaptive_mpc = AdaptiveMPCController(horizon=10, dt=0.1, map_instance=map_instance, wheelbase=wheelbase)
 
     # Follow the trajectory using the Adaptive MPC controller
-    trajectory = adaptive_mpc.follow_trajectory(start_pose, ref_trajectory, show_process=show_process)
+    goal_position = [goal_pose.x, goal_pose.y]
+    trajectory = adaptive_mpc.follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process)
 
     # Plot the MPC Path
     plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label="Adaptive MPC Path")

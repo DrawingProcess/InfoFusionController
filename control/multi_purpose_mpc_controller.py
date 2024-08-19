@@ -10,7 +10,7 @@ from control.mpc_controller import MPCController
 from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
 
 
-class MultiPurposeMPC(MPCController):
+class MultiPurposeMPCController(MPCController):
     def __init__(self, horizon, dt, wheelbase, map_instance, mode="path_tracking"):
         super().__init__(horizon, dt, wheelbase, map_instance)
         self.mode = mode  # 모드 설정 (path_tracking, time_optimal, obstacle_avoidance)
@@ -148,7 +148,7 @@ def main(map_type="ComplexGridMap"):
 
     # MPC Controller
     wheelbase = 2.5  # Example wheelbase of the vehicle in meters
-    mpc_controller = MultiPurposeMPC(horizon=10, dt=0.1, map_instance=map_instance, wheelbase=wheelbase)
+    mpc_controller = MultiPurposeMPCController(horizon=10, dt=0.1, map_instance=map_instance, wheelbase=wheelbase)
 
     # Follow the trajectory using the MPC controller
     goal_position = [goal_pose.x, goal_pose.y]
