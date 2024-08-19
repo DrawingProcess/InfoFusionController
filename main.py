@@ -52,7 +52,7 @@ def main():
 
     # MPC Controller
     wheelbase = 2.5  # Example wheelbase of the vehicle in meters
-    mpc_controller = AdaptiveMPCController(horizon=10, dt=0.1, parking_lot=parking_lot, wheelbase=wheelbase)
+    mpc_controller = AdaptiveMPCController(horizon=10, dt=0.1, map_instance=parking_lot, wheelbase=wheelbase)
 
     # Follow the trajectory using the MPC controller
     trajectory = mpc_controller.follow_trajectory(start_pose, ref_trajectory)
