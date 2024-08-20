@@ -27,13 +27,18 @@ class InformedRRTSmoothStar(InformedRRTStar):
     def search_route(self, show_process=True):
         # Generate and optimize the final course
         rx, ry = super().search_route(show_process)
+        if not rx or not ry:
+            return [], [], [], []
+
         theta_star = ThetaStar(self.map_instance)
         path_nodes = [Node(x, y, 0) for x, y in zip(rx, ry)]
+        if not path_nodes:  # path_nodes가 비어 있을 경우 처리
+            return rx, ry, [], []
+
         optimized_path_nodes = theta_star.optimize_path(path_nodes)
 
         rx_opt, ry_opt = [node.x for node in optimized_path_nodes], [node.y for node in optimized_path_nodes]
         return rx, ry, rx_opt, ry_opt
-
 
 class ThetaStar:
     def __init__(self, map_instance):
