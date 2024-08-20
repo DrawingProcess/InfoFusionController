@@ -60,6 +60,9 @@ class ThetaStar:
         return True
 
     def optimize_path(self, path):
+        if not path: # path가 비어 있을 경우 빈 리스트를 반환
+            return []
+
         optimized_path = [path[0]]
         for i in range(1, len(path) - 1):
             if not self.is_collision_free(optimized_path[-1], path[i + 1]):
@@ -67,6 +70,7 @@ class ThetaStar:
                 optimized_path.append(path[i])
         optimized_path.append(path[-1])
         return optimized_path
+
 
 
 def main(map_type="ComplexGridMap"):
