@@ -31,7 +31,9 @@ class Node:
 
 
 class HybridAStarRoutePlanner:
-    def __init__(self, map_instance):
+    def __init__(self, start_pose, goal_pose, map_instance):
+        self.start_node = Node(start_pose, 0, 0, -1)
+        self.goal_node = Node(goal_pose, 0, 0, -1)
         self.map_instance: ParkingLot = map_instance
 
         # Motion Model
@@ -40,13 +42,8 @@ class HybridAStarRoutePlanner:
         self.steering_inputs = [math.radians(x) for x in steering_degree_inputs]
         self.chord_lengths = [2, 1]
 
-        self.goal_node = None
-
-    def search_route(self, start_pose, goal_pose, show_process=True):
-        start_node = Node(start_pose, 0, 0, -1)
-        self.goal_node = Node(goal_pose, 0, 0, -1)
-
-        open_set = {self.map_instance.get_grid_index(start_node.discrete_x, start_node.discrete_y): start_node}
+    def search_route(self, show_process=False):
+        open_set = {self.map_instance.get_grid_index(self.start_node.discrete_x, self.start_node.discrete_y): self.start_node}
         closed_set = {}
 
         while open_set:

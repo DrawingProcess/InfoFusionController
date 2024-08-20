@@ -7,7 +7,9 @@ from map.complex_grid_map import ComplexGridMap
 from route_planner.geometry import Pose, Node
 
 class AStarRoutePlanner:
-    def __init__(self, map_instance):
+    def __init__(self, start_pose, goal_pose, map_instance):
+        self.start_node = Node(start_pose.x, start_pose.y, 0.0, -1)
+        self.goal_node = Node(goal_pose.x, goal_pose.y, 0.0, -1)
         self.map_instance: ParkingLot = map_instance
 
         # Motion Model: dx, dy, cost
@@ -22,13 +24,8 @@ class AStarRoutePlanner:
             [1, 1, math.sqrt(2)],
         ]
 
-        self.goal_node: Node = Node(0, 0, 0.0, -1)
-
-    def search_route(self, start_pose, goal_pose, show_process=True):
-        start_node = Node(start_pose.x, start_pose.y, 0.0, -1)
-        self.goal_node = Node(goal_pose.x, goal_pose.y, 0.0, -1)
-
-        open_set = {self.map_instance.get_grid_index(start_node.x, start_node.y): start_node}
+    def search_route(self, show_process=False):
+        open_set = {self.map_instance.get_grid_index(self.start_node.x, self.start_node.y): self.start_node}
         closed_set = {}
 
         while open_set:
@@ -138,8 +135,8 @@ def main(map_type="ComplexGridMap"):
     plt.ylabel("Y [m]")
     plt.axis("equal")
 
-    a_star = AStarRoutePlanner(map_instance)
-    rx, ry = a_star.search_route(start_pose, goal_pose, False)
+    a_star = AStarRoutePlanner(start_pose, goal_pose, map_instance)
+    rx, ry = a_star.search_route(False)
 
     plt.plot(rx, ry, "-r")
     plt.pause(0.001)

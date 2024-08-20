@@ -81,7 +81,7 @@ class RRTStar:
                     near_node.parent = new_node
                     near_node.cost = cost
 
-    def search_route(self, show_process=True, path_region=None):
+    def search_route(self, show_process=False, path_region=None):
         self.goal_reached = False
         for _ in range(self.max_iter):
             rand_node = self.sample(path_region)
