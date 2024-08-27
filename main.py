@@ -16,11 +16,11 @@ from route_planner.informed_rrt_star_planner import InformedRRTStar
 from route_planner.informed_rrt_star_smooth_planner import InformedRRTSmoothStar
 from route_planner.informed_trrt_star_planner import InformedTRRTStar
 
-from control.pure_pursuit import PurePursuitController
-from control.stanley import StanleyController
-from control.mpc_controller import MPCController
-from control.adaptive_mpc_controller import AdaptiveMPCController
-from control.multi_purpose_mpc_controller import MultiPurposeMPCController
+from controller.pure_pursuit import PurePursuitController
+from controller.stanley import StanleyController
+from controller.mpc_controller import MPCController
+from controller.adaptive_mpc_controller import AdaptiveMPCController
+from controller.multi_purpose_mpc_controller import MultiPurposeMPCController
 
 from utils import calculate_angle, transform_arrays_with_angles
 
@@ -41,13 +41,17 @@ def main():
     }
     map_instance = map_options[args.map]()
 
-    # fixed pose
-    start_pose = Pose(3, 5, math.radians(0))
-    goal_pose = Pose(5, 15, math.radians(0))
-    # random pose
-    # start_pose = map_instance.get_random_valid_start_position()
-    # goal_pose = map_instance.get_random_valid_goal_position()
-    print(f"Start {args.controller} Controller (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
+    if args.map == "parking_lot":
+        start_pose = Pose(14.0, 4.0, math.radians(0))
+        goal_pose = Pose(50.0, 38.0, math.radians(90))
+    elif args.map == "fixed_grid":
+        start_pose = Pose(3, 5, math.radians(0))
+        goal_pose = Pose(5, 15, math.radians(0))
+    else:
+        start_pose = map_instance.get_random_valid_start_position()
+        goal_pose = map_instance.get_random_valid_goal_position()
+    print(f"Start planning (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
+
     # Route planner selection using dictionary
     route_planner_options = {
         'a_star': AStarRoutePlanner,
