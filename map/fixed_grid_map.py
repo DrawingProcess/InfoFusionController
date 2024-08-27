@@ -31,11 +31,11 @@ class FixedGridMap(GridMap):
         self.obstacle_lines.extend(box_lines)
 
 if __name__ == "__main__":
-    grid_map = FixedGridMap()
-    grid_map.plot_map()
+    map_instance = FixedGridMap()
+    map_instance.plot_map()
 
-    plt.xlim(-1, grid_map.lot_width + 1)
-    plt.ylim(-1, grid_map.lot_height + 1)
+    plt.xlim(-1, map_instance.lot_width + 1)
+    plt.ylim(-1, map_instance.lot_height + 1)
     plt.title("Pure Pursuit Route Planner")
     plt.grid(True)
     plt.xlabel("X [m]")

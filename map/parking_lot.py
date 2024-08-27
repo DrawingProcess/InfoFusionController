@@ -43,10 +43,10 @@ class ParkingLot(GridMap):
 
 if __name__ == "__main__":
     # 주차장의 크기를 설정 (예: lot_width=120, lot_height=100 등으로 설정 가능)
-    parking_lot = ParkingLot(lot_width=120, lot_height=100)
-    parking_lot.plot_map()
-    plt.xlim(-1, parking_lot.lot_width + 1)
-    plt.ylim(-1, parking_lot.lot_height + 1)
+    map_instance = ParkingLot(lot_width=120, lot_height=100)
+    map_instance.plot_map()
+    plt.xlim(-1, map_instance.lot_width + 1)
+    plt.ylim(-1, map_instance.lot_height + 1)
     plt.title("Parking Lot")
     plt.grid(True)
     plt.xlabel("X [m]")

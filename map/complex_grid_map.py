@@ -87,11 +87,11 @@ class ComplexGridMap(GridMap):
 
 if __name__ == "__main__":
     # 맵 크기를 지정하여 GridMap 생성 (예: 100x75)
-    grid_map = ComplexGridMap(lot_width=100, lot_height=80)
-    grid_map.plot_map()
+    map_instance = ComplexGridMap(lot_width=100, lot_height=80)
+    map_instance.plot_map()
 
-    plt.xlim(-1, grid_map.lot_width + 1)
-    plt.ylim(-1, grid_map.lot_height + 1)
+    plt.xlim(-1, map_instance.lot_width + 1)
+    plt.ylim(-1, map_instance.lot_height + 1)
     plt.title("Complex Grid Map with Path")
     plt.grid(True)
     plt.xlabel("X [m]")
