@@ -14,6 +14,7 @@ class ComplexGridMap(GridMap):
 
         self.obstacles = []
         self.obstacle_lines = []
+        self.circular_obstacles = []
 
         # 외벽 생성
         self.create_outer_walls()
@@ -21,27 +22,15 @@ class ComplexGridMap(GridMap):
         # 장애물 생성 (맵 크기에 비례하여 장애물 수 결정)
         self.create_random_obstacles()
 
-    def create_outer_walls(self):
-        # 주차장의 외벽을 생성하는 함수
-        for x in range(self.lot_width):
-            self.obstacles.append((x, 0))  # 아래쪽 외벽
-            self.obstacles.append((x, self.lot_height - 1))  # 위쪽 외벽
-        for y in range(1, self.lot_height - 1):
-            self.obstacles.append((0, y))  # 왼쪽 외벽
-            self.obstacles.append((self.lot_width - 1, y))  # 오른쪽 외벽
-        self.obstacle_lines.extend([
-            [(0, 0), (0, self.lot_height - 1)],
-            [(0, 0), (self.lot_width - 1, 0)],
-            [(self.lot_width - 1, 0), (self.lot_width - 1, self.lot_height - 1)],
-            [(0, self.lot_height - 1), (self.lot_width - 1, self.lot_height - 1)],
-        ])
-
     def create_random_obstacles(self):
         num_obstacles = int(self.lot_width * self.lot_height * 0.005)
         for _ in range(num_obstacles):
-            self.add_random_shape()
+            if random.choice([True, False]):  # 50% 확률로 사각형 또는 원형 장애물 생성
+                self.add_random_rectangle()
+            else:
+                self.add_random_circle()
 
-    def add_random_shape(self):
+    def add_random_rectangle(self):
         start_x = random.randint(1, self.lot_width - 10)
         start_y = random.randint(1, self.lot_height - 10)
         width = random.randint(3, 10)
@@ -56,6 +45,45 @@ class ComplexGridMap(GridMap):
             [(start_x + width - 1, start_y), (start_x + width - 1, start_y + height - 1)],
             [(start_x, start_y + height - 1), (start_x + width - 1, start_y + height - 1)],
         ])
+
+
+    def add_random_circle(self):
+        center_x = random.randint(10, self.lot_width - 10)
+        center_y = random.randint(10, self.lot_height - 10)
+        radius = random.randint(3, 7)
+
+        # 원의 좌표를 저장
+        self.circular_obstacles.append((center_x, center_y, radius))
+
+        # 그리드 맵에 원의 내부를 장애물로 추가
+        for x in range(center_x - radius, center_x + radius + 1):
+            for y in range(center_y - radius, center_y + radius + 1):
+                if 0 <= x < self.lot_width and 0 <= y < self.lot_height:
+                    distance = math.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
+                    if distance <= radius:
+                        self.grid[y][x] = 1
+                        self.obstacles.append((x, y))
+
+    def plot_map(self, path=None):
+        obstacle_x = [x for x, y in self.obstacles]
+        obstacle_y = [y for x, y in self.obstacles]
+        plt.plot(obstacle_x, obstacle_y, ".k")  # 장애물은 검은색 점으로 표시
+
+        # 사각형 장애물의 경계선 표시
+        for line in self.obstacle_lines:
+            x_values = [line[0][0], line[1][0]]
+            y_values = [line[0][1], line[1][1]]
+            plt.plot(x_values, y_values, "k-")  # 장애물 라인은 검은 실선으로 표시
+
+        # 원형 장애물 표시
+        for center_x, center_y, radius in self.circular_obstacles:
+            circle = plt.Circle((center_x, center_y), radius, color='black', fill=False)
+            plt.gca().add_patch(circle)
+
+        if path:
+            path_x = [x for x, y in path]
+            path_y = [y for x, y in path]
+            plt.plot(path_x, path_y, "-or")  # 경로는 빨간색 원으로 연결된 선으로 표시
 
 if __name__ == "__main__":
     # 맵 크기를 지정하여 GridMap 생성 (예: 100x75)

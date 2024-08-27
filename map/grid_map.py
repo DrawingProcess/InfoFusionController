@@ -64,16 +64,18 @@ class GridMap:
 
     def is_not_crossed_obstacle(self, previous_node, current_node):
         is_cross_line = any(
-            [
-                self.intersect(obstacle_line, [previous_node, current_node])
-                for obstacle_line in self.obstacle_lines
-            ]
+            self.intersect(obstacle_line, [previous_node, current_node])
+            for obstacle_line in self.obstacle_lines
+        )
+        is_cross_circle = any(
+            self.intersect_circle(center, radius, previous_node, current_node)
+            for center, radius in self.get_circle_obstacles()
         )
         return (
             current_node not in set(self.obstacles)
             and 0 < current_node[0] < self.lot_width
             and 0 < current_node[1] < self.lot_height
-            and not is_cross_line
+            and not (is_cross_line or is_cross_circle)
         )
 
     def intersect(self, line1, line2):
@@ -82,6 +84,32 @@ class GridMap:
         C = line2[0]
         D = line2[1]
         return self.ccw(A, C, D) != self.ccw(B, C, D) and self.ccw(A, B, C) != self.ccw(A, B, D)
+
+    def intersect_circle(self, center, radius, node1, node2):
+        # 원형 장애물과 선분의 교차 여부 검사
+        # 중심과의 거리 및 선분과 원의 관계를 활용하여 계산
+        cx, cy = center
+        px, py = node1
+        qx, qy = node2
+        dx, dy = qx - px, qy - py
+        fx, fy = px - cx, py - cy
+
+        a = dx * dx + dy * dy
+        b = 2 * (fx * dx + fy * dy)
+        c = (fx * fx + fy * fy) - radius * radius
+
+        discriminant = b * b - 4 * a * c
+        if discriminant < 0:
+            return False  # 교차하지 않음
+        discriminant = math.sqrt(discriminant)
+
+        t1 = (-b - discriminant) / (2 * a)
+        t2 = (-b + discriminant) / (2 * a)
+
+        if (0 <= t1 <= 1) or (0 <= t2 <= 1):
+            return True  # 교차함
+
+        return False
 
     def ccw(self, A, B, C):
         return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])
