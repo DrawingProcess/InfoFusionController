@@ -11,18 +11,7 @@ from route_planner.informed_rrt_star_planner import InformedRRTStar
 
 class InformedRRTSmoothStar(InformedRRTStar):
     def __init__(self, start, goal, map_instance, max_iter=300, search_radius=10, show_eclipse=False):
-        self.start = Node(start.x, start.y, 0.0)
-        self.goal = Node(goal.x, goal.y, 0.0)
-        self.map_instance = map_instance
-        self.max_iter = max_iter
-        self.search_radius = search_radius
-        self.nodes = [self.start]
-        self.c_best = float("inf")
-        self.x_center = np.array([(self.start.x + self.goal.x) / 2.0, (self.start.y + self.goal.y) / 2.0])
-        self.c_min = np.linalg.norm(np.array([self.start.x, self.start.y]) - np.array([self.goal.x, self.goal.y]))
-        self.C = self.rotation_to_world_frame()
-        self.show_eclipse = show_eclipse
-        self.goal_reached = False  # Goal reached flag
+        super().__init__(start, goal, map_instance, max_iter, search_radius)
 
     def search_route(self, show_process=True):
         # Generate and optimize the final course
@@ -30,53 +19,23 @@ class InformedRRTSmoothStar(InformedRRTStar):
         if not rx or not ry:
             return [], [], [], []
 
-        theta_star = ThetaStar(self.map_instance)
-        path_nodes = [Node(x, y, 0) for x, y in zip(rx, ry)]
-        if not path_nodes:  # path_nodes가 비어 있을 경우 처리
-            return rx, ry, [], []
+        # Apply smoothing to the final path
+        rx_opt, ry_opt = self.smooth_path(rx, ry)
 
-        optimized_path_nodes = theta_star.optimize_path(path_nodes)
-
-        rx_opt, ry_opt = [node.x for node in optimized_path_nodes], [node.y for node in optimized_path_nodes]
         return rx, ry, rx_opt, ry_opt
 
-class ThetaStar:
-    def __init__(self, map_instance):
-        self.map_instance = map_instance
-
-    def is_collision_free(self, node1, node2):
-        x1, y1 = node1.x, node1.y
-        x2, y2 = node2.x, node2.y
-        
-        # Ensure the segment is within the parking lot boundaries
-        if not (0 <= x1 <= self.map_instance.lot_width and 0 <= y1 <= self.map_instance.lot_height 
-        and 0 <= x2 <= self.map_instance.lot_width and 0 <= y2 <= self.map_instance.lot_height):
-            return False
-        
-        # Use a high-resolution check along the line segment
-        num_checks = int(math.hypot(x2 - x1, y2 - y1) * 10)
-        for i in range(num_checks):
-            t = i / num_checks
-            x = x1 + t * (x2 - x1)
-            y = y1 + t * (y2 - y1)
-            # Ensure the point is within the parking lot and not on an obstacle
-            if not self.map_instance.is_not_crossed_obstacle((round(x1), round(y1)), (round(x), round(y))):
-                return False
-        return True
-
-    def optimize_path(self, path):
-        if not path: # path가 비어 있을 경우 빈 리스트를 반환
-            return []
-
-        optimized_path = [path[0]]
-        for i in range(1, len(path) - 1):
-            if not self.is_collision_free(optimized_path[-1], path[i + 1]):
-                # If the segment from the previous node to the next node is not collision-free, add the current node to the path
-                optimized_path.append(path[i])
-        optimized_path.append(path[-1])
-        return optimized_path
-
-
+    def smooth_path(self, path_x, path_y):
+        smooth_x, smooth_y = [path_x[0]], [path_y[0]]
+        i = 0
+        while i < len(path_x) - 1:
+            for j in range(len(path_x) - 1, i, -1):
+                # Pass a default cost value when creating Node instances
+                if self.is_collision_free(Node(path_x[i], path_y[i], 0.0), Node(path_x[j], path_y[j], 0.0)):
+                    smooth_x.append(path_x[j])
+                    smooth_y.append(path_y[j])
+                    i = j
+                    break
+        return smooth_x, smooth_y
 
 def main(map_type="ComplexGridMap"):
     # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성

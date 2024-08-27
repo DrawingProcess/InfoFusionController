@@ -24,17 +24,7 @@ from route_planner.informed_rrt_star_planner import InformedRRTStar
 
 class InformedTRRTStar(InformedRRTStar):
     def __init__(self, start, goal, map_instance, max_iter=300, search_radius=10, show_eclipse=False):
-        self.start = Node(start.x, start.y, 0.0)
-        self.goal = Node(goal.x, goal.y, 0.0)
-        self.map_instance = map_instance
-        self.max_iter = max_iter
-        self.search_radius = search_radius
-        self.nodes = [self.start]
-        self.c_best = float("inf")  # Initialize the cost to reach the goal
-        self.x_center = np.array([(self.start.x + self.goal.x) / 2.0, (self.start.y + self.goal.y) / 2.0])
-        self.c_min = np.linalg.norm(np.array([self.start.x, self.start.y]) - np.array([self.goal.x, self.goal.y]))
-        self.C = self.rotation_to_world_frame()
-        self.show_eclipse = show_eclipse  # Flag to enable/disable eclipse drawing
+        super().__init__(start, goal, map_instance, max_iter, search_radius)
 
     def narrow_sample(self, x_path, y_path):
         # Narrow the sampling region based on the initial Theta* path
@@ -46,12 +36,22 @@ class InformedTRRTStar(InformedRRTStar):
             path_region.append((x1, y1, x2, y2, margin))
         return path_region
 
+    def calculate_transformation_matrix(self):
+        # Calculate the matrix L using the Cholesky decomposition as described in the text
+        a1 = self.c_best / 2.0
+        a2 = math.sqrt(self.c_best**2 - self.c_min**2) / 2.0
+        D = np.diag([a1, a2])
+
+        # Cholesky decomposition to calculate L
+        L = np.linalg.cholesky(D)
+        return L
+
     def sample(self, path_region=None):
         if self.c_best < float("inf"):
             while True:
                 x_ball = self.sample_unit_ball()
-                x_rand = np.dot(np.dot(self.C, np.diag([self.c_best / 2.0, math.sqrt(self.c_best ** 2 - self.c_min ** 2) / 2.0])), x_ball)
-                x_rand = x_rand + self.x_center
+                L = self.calculate_transformation_matrix()
+                x_rand = np.dot(self.C, np.dot(L, x_ball)) + self.x_center
                 x_rand_node = Node(x_rand[0], x_rand[1], 0.0)
                 if self.is_within_map_instance(x_rand_node) and (path_region is None or self.is_within_region(x_rand_node, path_region)):
                     return x_rand_node

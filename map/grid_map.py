@@ -94,8 +94,6 @@ class GridMap:
         return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])
 
     def intersect_circle(self, center_x, center_y, radius, node1, node2):
-        # 원형 장애물과 선분의 교차 여부 검사
-        # 중심과의 거리 및 선분과 원의 관계를 활용하여 계산
         cx, cy = center_x, center_y
         px, py = node1
         qx, qy = node2
@@ -106,18 +104,23 @@ class GridMap:
         b = 2 * (fx * dx + fy * dy)
         c = (fx * fx + fy * fy) - radius * radius
 
+        # Handle the case where the segment length is near-zero
+        if a == 0:
+            # Check if the point (node1) is inside the circle
+            return math.hypot(px - cx, py - cy) <= radius
+
         discriminant = b * b - 4 * a * c
         if discriminant < 0:
-            return False  # 교차하지 않음
+            return False  # No intersection
+
         discriminant = math.sqrt(discriminant)
 
         t1 = (-b - discriminant) / (2 * a)
         t2 = (-b + discriminant) / (2 * a)
 
-        if (0 <= t1 <= 1) or (0 <= t2 <= 1):
-            return True  # 교차함
+        # Check if the intersection points are within the segment bounds
+        return (0 <= t1 <= 1) or (0 <= t2 <= 1)
 
-        return False
 
     def plot_map(self, path=None):
         obstacle_x = [x for x, y in self.obstacles]

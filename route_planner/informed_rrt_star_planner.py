@@ -12,24 +12,18 @@ from route_planner.rrt_star_planner import RRTStar
 class InformedRRTStar(RRTStar):
     def __init__(self, start, goal, map_instance, max_iter=300, search_radius=10, show_eclipse=False):
         super().__init__(start, goal, map_instance, max_iter, search_radius)
-        self.start = Node(start.x, start.y, 0.0)
-        self.goal = Node(goal.x, goal.y, 0.0)
-        self.map_instance = map_instance
-        self.max_iter = max_iter
-        self.search_radius = search_radius
-        self.nodes = [self.start]
         self.c_best = float("inf")  # Initialize the cost to reach the goal
         self.x_center = np.array([(self.start.x + self.goal.x) / 2.0, (self.start.y + self.goal.y) / 2.0])
         self.c_min = np.linalg.norm(np.array([self.start.x, self.start.y]) - np.array([self.goal.x, self.goal.y]))
         self.C = self.rotation_to_world_frame()
         self.show_eclipse = show_eclipse  # Flag to enable/disable eclipse drawing
-        self.goal_reached = False
 
     def rotation_to_world_frame(self):
-        a1 = np.array([self.goal.x - self.start.x, self.goal.y - self.start.y])
-        a1 = a1 / np.linalg.norm(a1)
-        a2 = np.array([-a1[1], a1[0]])
-        return np.vstack((a1, a2)).T
+        # Calculate the rotation matrix to align the ellipse with the path
+        direction = np.array([self.goal.x - self.start.x, self.goal.y - self.start.y])
+        direction = direction / np.linalg.norm(direction)
+        perpendicular = np.array([-direction[1], direction[0]])
+        return np.vstack((direction, perpendicular)).T
 
     def sample(self, path_region=None):
         if self.c_best < float("inf"):
