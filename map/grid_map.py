@@ -12,6 +12,7 @@ class GridMap:
 
         self.obstacles = []
         self.obstacle_lines = []
+        self.circular_obstacles = []
 
         # 외벽 생성
         self.create_outer_walls()
@@ -33,6 +34,10 @@ class GridMap:
 
     def get_grid_index(self, x, y):
         return x + y * self.lot_width
+    
+    def get_circle_obstacles(self):
+        # 원형 장애물들의 (중심 좌표, 반지름)을 반환
+        return self.circular_obstacles
 
     def is_obstacle(self, x, y):
         return (x, y) in self.obstacles
@@ -68,8 +73,8 @@ class GridMap:
             for obstacle_line in self.obstacle_lines
         )
         is_cross_circle = any(
-            self.intersect_circle(center, radius, previous_node, current_node)
-            for center, radius in self.get_circle_obstacles()
+            self.intersect_circle(center_x, center_y, radius, previous_node, current_node)
+            for center_x, center_y, radius in self.get_circle_obstacles()
         )
         return (
             current_node not in set(self.obstacles)
@@ -85,10 +90,13 @@ class GridMap:
         D = line2[1]
         return self.ccw(A, C, D) != self.ccw(B, C, D) and self.ccw(A, B, C) != self.ccw(A, B, D)
 
-    def intersect_circle(self, center, radius, node1, node2):
+    def ccw(self, A, B, C):
+        return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])
+
+    def intersect_circle(self, center_x, center_y, radius, node1, node2):
         # 원형 장애물과 선분의 교차 여부 검사
         # 중심과의 거리 및 선분과 원의 관계를 활용하여 계산
-        cx, cy = center
+        cx, cy = center_x, center_y
         px, py = node1
         qx, qy = node2
         dx, dy = qx - px, qy - py
@@ -110,9 +118,6 @@ class GridMap:
             return True  # 교차함
 
         return False
-
-    def ccw(self, A, B, C):
-        return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])
 
     def plot_map(self, path=None):
         obstacle_x = [x for x, y in self.obstacles]
