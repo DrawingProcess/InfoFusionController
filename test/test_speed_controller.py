@@ -14,8 +14,8 @@ from route_planner.informed_trrt_star_planner import InformedTRRTStar
 from controller.mpc_controller import MPCController
 from controller.adaptive_mpc_controller import AdaptiveMPCController
 from controller.multi_purpose_mpc_controller import MultiPurposeMPCController
-from controller.pure_pursuit import PurePursuitController
-from controller.stanley import StanleyController
+from controller.pure_pursuit_controller import PurePursuitController
+from controller.stanley_controller import StanleyController
 
 # 메인 함수
 def main():

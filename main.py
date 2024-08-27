@@ -16,8 +16,8 @@ from route_planner.informed_rrt_star_planner import InformedRRTStar
 from route_planner.informed_rrt_star_smooth_planner import InformedRRTSmoothStar
 from route_planner.informed_trrt_star_planner import InformedTRRTStar
 
-from controller.pure_pursuit import PurePursuitController
-from controller.stanley import StanleyController
+from controller.pure_pursuit_controller import PurePursuitController
+from controller.stanley_controller import StanleyController
 from controller.mpc_controller import MPCController
 from controller.adaptive_mpc_controller import AdaptiveMPCController
 from controller.multi_purpose_mpc_controller import MultiPurposeMPCController
