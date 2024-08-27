@@ -102,6 +102,8 @@ class HybridAStarRoutePlanner:
             rx.append(n.pose.x)
             ry.append(n.pose.y)
             parent_node = n.parent_node_index
+        rx.reverse()
+        ry.reverse()
         return rx, ry
 
     def calculate_next_node(self, current, current_node_index, chord_length, steering):
