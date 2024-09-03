@@ -103,11 +103,15 @@ def main():
     plt.plot(rx_opt, ry_opt, "-r", label="Optimized Path")
 
     # Follow the trajectory using the selected controller
-    trajectory = controller.follow_trajectory(start_pose, ref_trajectory, [goal_pose.x, goal_pose.y], show_process=True)
+    goal_position = [goal_pose.x, goal_pose.y]
+    is_reached, trajectory_distance, trajectory  = controller.follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=True)
     
-    plt.plot(trajectory[:, 0], trajectory[:, 1], "r-", label="Controller Path")
-    plt.legend()
-    plt.show()
+    if is_reached:
+        print("Plotting the final trajectory.")
+        print(f"Total distance covered: {trajectory_distance}")
+        plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label="MPC Path")
+        plt.legend()
+        plt.show()
 
 if __name__ == "__main__":
     main()
