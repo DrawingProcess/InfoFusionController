@@ -33,3 +33,8 @@ ADLAB-PLANNING
 \---test
         algotithm_speed_test.py                 # test: Comparison of algorithmic speed performance
 ```
+
+## Env Settings
+
+$ export QT_QPA_PLATFORM=xcb
+$ export PYTHONPATH="$PYTHONPATH:$PWD"
