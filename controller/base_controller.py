@@ -75,6 +75,26 @@ class BaseController:
 
         return adjusted_targets
 
+    def select_best_path(self, current_state, adjusted_targets, goal_position):
+        best_target = None
+        min_distance = float('inf')
+
+        for i, adjusted_target in enumerate(adjusted_targets):
+            if self.is_collision_free(current_state, adjusted_target):
+                print(f"Adjusted Target {i} is collision-free: {adjusted_target}")
+                distance = np.linalg.norm(adjusted_target[:2] - goal_position)
+                if distance < min_distance:
+                    min_distance = distance
+                    best_target = adjusted_target
+            else:
+                print(f"Adjusted Target {i} is in collision: {adjusted_target}")
+
+        if best_target is not None:
+            return True, best_target
+        else:
+            print("No collision-free path found, staying in place.")
+            return False, None
+
     def is_goal_reached(self, current_state, goal_position, tolerance=0.5):
         # Check if the current position is close enough to the goal position
         distance_to_goal = np.hypot(current_state[0] - goal_position[0], current_state[1] - goal_position[1])
@@ -118,6 +138,8 @@ class BaseController:
 
         predicted_lines = []
 
+        is_reached = False
+
         while not self.is_goal_reached(current_state, goal_position):
             # Find the target index
             target_index = self.find_target_index(current_state, ref_trajectory)
@@ -150,27 +172,8 @@ class BaseController:
                 plt.legend()
                 plt.pause(0.001)
             
-            # Check if the direct path to the target point is collision-free
             if not self.is_collision_free(current_state, target_point):
-                # Evaluate each adjusted target to find the best collision-free path
-                best_target = None
-                min_distance = float('inf')
-
-                for i, adjusted_target in enumerate(adjusted_targets):
-                    if self.is_collision_free(current_state, adjusted_target):
-                        print(f"Adjusted Target {i} is collision-free: {adjusted_target}")
-                        distance = np.linalg.norm(adjusted_target[:2] - goal_position)
-                        if distance < min_distance:
-                            min_distance = distance
-                            best_target = adjusted_target
-                    else:
-                        print(f"Adjusted Target {i} is in collision: {adjusted_target}")
-
-                if best_target is not None:
-                    target_point = best_target
-                else:
-                    print("No collision-free path found, staying in place.")
-                    return False, 0, np.array(trajectory)
+                is_reached, target_point = self.select_best_path(current_state, adjusted_targets, goal_position)
             
             # Apply control
             steering_angle = self.compute_control(current_state, target_point)
@@ -187,7 +190,7 @@ class BaseController:
         total_distance = self.calculate_trajectory_distance(np.array(trajectory))
 
         print("Trajectory following completed.")
-        return True, total_distance, np.array(trajectory)
+        return is_reached, total_distance, np.array(trajectory)
 
 def main(map_type="ComplexGridMap"):
     if map_type == "ParkingLot":

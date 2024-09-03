@@ -7,16 +7,14 @@ from utils import calculate_angle, transform_arrays_with_angles
 from map.parking_lot import ParkingLot
 from map.complex_grid_map import ComplexGridMap
 
-from control.base_controller import BaseController
+from controller.base_controller import BaseController
 
 from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
 
 class MPCController(BaseController):
     def __init__(self, horizon, dt, wheelbase, map_instance):
+        super().__init__(dt, wheelbase, map_instance)
         self.horizon = horizon
-        self.dt = dt
-        self.map_instance = map_instance
-        self.wheelbase = wheelbase  # Wheelbase of the vehicle
 
     def apply_control(self, state, control_input):
         x, y, theta, v = state
@@ -75,16 +73,27 @@ class MPCController(BaseController):
         current_state = np.array([start_pose.x, start_pose.y, start_pose.theta, 0.0])
         trajectory = [current_state.copy()]
 
+        is_reached = True
+
         # Follow the reference trajectory
-        for i in range(len(ref_trajectory) - self.horizon):
+        for i in range(len(ref_trajectory)):
+            if self.is_goal_reached(current_state, goal_position):
+                print("Goal reached successfully!")
+                break
+            
+            self.horizon = min(self.horizon, len(ref_trajectory) - i)
+
             ref_segment = ref_trajectory[i:i + self.horizon]
             control_input = self.optimize_control(current_state, ref_segment)
             next_state = self.apply_control(current_state, control_input)
 
-            # Check if there is a collision along the path
             if not self.is_collision_free(current_state, next_state):
-                print(f"Collision detected at step {i}. Avoiding obstacle...")
-                next_state = self.avoid_obstacle(current_state, next_state)
+                print(f"Collision detected at step {i}. Attempting to avoid obstacle...")
+                adjusted_targets = self.avoid_obstacle(current_state, next_state)
+                is_reached, next_state = self.select_best_path(current_state, adjusted_targets, goal_position)
+                if not is_reached:
+                    print("Goal not reachable.")
+                    return is_reached, 0, np.array(trajectory)
 
             current_state = next_state
             trajectory.append(current_state)
@@ -101,52 +110,10 @@ class MPCController(BaseController):
             current_state[2] = calculate_angle(current_state[0], current_state[1], goal_position[0], goal_position[1])
             trajectory.append(current_state)
     
-        return np.array(trajectory)
-    
-    # def follow_trajectory(self, start_pose, ref_trajectory, goal_position, show_process=False):
-    #     # Initialize the state and trajectory
-    #     start_pose.theta = calculate_angle(start_pose.x, start_pose.y, ref_trajectory[1, 0], ref_trajectory[1, 1])
-    #     current_state = np.array([start_pose.x, start_pose.y, start_pose.theta, 0.0])
-    #     trajectory = [current_state.copy()]
-    
-    #     step = 0
-    #     # Follow the reference trajectory until the goal is reached
-    #     while not self.is_goal_reached(current_state, goal_position):
-    #         # Adjust the horizon dynamically if near the end of the reference trajectory
-    #         remaining_steps = len(ref_trajectory) - step
-    #         current_horizon = min(self.horizon, remaining_steps)
-            
-    #         if current_horizon <= 0:
-    #             break
-            
-    #         ref_segment = ref_trajectory[step:step + current_horizon]
-    #         control_input = self.optimize_control(current_state, ref_segment)
-    #         next_state = self.apply_control(current_state, control_input)
-    
-    #         # Check if there is a collision along the path
-    #         if not self.is_collision_free(current_state, next_state):
-    #             print(f"Collision detected at step {step}. Avoiding obstacle...")
-    #             next_state = self.avoid_obstacle(current_state, next_state)
-    
-    #         current_state = next_state
-    #         trajectory.append(current_state)
-    
-    #         # Plot current state
-    #         if show_process:
-    #             plt.plot(current_state[0], current_state[1], "xr")
-    #             plt.pause(0.001)
-    
-    #         step += 1
-    
-    #     # If the goal is still not reached, adjust the final position
-    #     if not self.is_goal_reached(current_state, goal_position):
-    #         print("Final adjustment to reach the goal.")
-    #         current_state[0], current_state[1] = goal_position
-    #         current_state[2] = calculate_angle(current_state[0], current_state[1], goal_position[0], goal_position[1])
-    #         trajectory.append(current_state)
-        
-    #     return np.array(trajectory)
+        total_distance = self.calculate_trajectory_distance(np.array(trajectory))
 
+        print("Trajectory following completed.")
+        return is_reached, total_distance, np.array(trajectory)
 
 def main(map_type="ComplexGridMap"):
     # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
@@ -201,11 +168,14 @@ def main(map_type="ComplexGridMap"):
 
     # Follow the trajectory using the MPC controller
     goal_position = [goal_pose.x, goal_pose.y]
-    trajectory = mpc_controller.follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=True)
+    is_reached, trajectory_distance, trajectory  = mpc_controller.follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=True)
     
-    plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label="MPC Path")
-    plt.legend()
-    plt.show()
+    if is_reached:
+        print("Plotting the final trajectory.")
+        print(f"Total distance covered: {trajectory_distance}")
+        plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label="MPC Path")
+        plt.legend()
+        plt.show()
 
 if __name__ == "__main__":
     main()
