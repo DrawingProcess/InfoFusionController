@@ -15,7 +15,7 @@ class PurePursuitController(BaseController):
         super().__init__(dt, wheelbase, map_instance)
         self.lookahead_distance = lookahead_distance  # Lookahead distance for Pure Pursuit
 
-    def find_target_index(self, state, ref_trajectory):
+    def find_target_point(self, state, ref_trajectory):
         x, y, theta = state[:3]
         min_distance = float('inf')
         target_index = 0
@@ -31,7 +31,12 @@ class PurePursuitController(BaseController):
         while target_index < len(ref_trajectory) and np.hypot(ref_trajectory[target_index, 0] - x, ref_trajectory[target_index, 1] - y) < self.lookahead_distance:
             target_index += 1
 
-        return target_index
+        if target_index >= len(ref_trajectory):
+            target_point = ref_trajectory[-1]
+        else:
+            target_point = ref_trajectory[target_index]
+
+        return target_point
 
     def compute_control(self, state, target_point):
         x, y, theta = state[:3]

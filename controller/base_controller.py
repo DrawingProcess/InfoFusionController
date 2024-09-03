@@ -100,7 +100,7 @@ class BaseController:
         distance_to_goal = np.hypot(current_state[0] - goal_position[0], current_state[1] - goal_position[1])
         return distance_to_goal < tolerance
 
-    def find_target_index(self, state, ref_trajectory):
+    def find_target_point(self, state, ref_trajectory):
         x, y, theta = state[:3]
         min_distance = float('inf')
         target_index = 0
@@ -111,8 +111,13 @@ class BaseController:
             if distance < min_distance:
                 min_distance = distance
                 target_index = i
+        
+        if target_index >= len(ref_trajectory):
+            target_point = ref_trajectory[-1]
+        else:
+            target_point = ref_trajectory[target_index]
 
-        return target_index
+        return target_point
 
     def predict_trajectory(self, current_state, target_point, n_steps=10, velocity=0.5):
         # Predict future trajectory using the kinematic bicycle model
@@ -142,11 +147,7 @@ class BaseController:
 
         while not self.is_goal_reached(current_state, goal_position):
             # Find the target index
-            target_index = self.find_target_index(current_state, ref_trajectory)
-            if target_index >= len(ref_trajectory):
-                target_point = ref_trajectory[-1]
-            else:
-                target_point = ref_trajectory[target_index]
+            target_point = self.find_target_point(current_state, ref_trajectory)
 
             # Generate possible adjusted targets to avoid obstacles
             adjusted_targets = self.avoid_obstacle(current_state, target_point)

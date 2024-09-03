@@ -63,8 +63,7 @@ class HybridController(BaseController):
             state_mpc = self.mpc_controller.optimize_control(current_state, ref_segment)
             next_state_mpc = self.mpc_controller.apply_control(current_state, state_mpc)
 
-            target_index = self.pure_pursuit_controller.find_target_index(current_state, ref_trajectory)
-            target_point = ref_trajectory[target_index]
+            target_point = self.pure_pursuit_controller.find_target_point(current_state, ref_trajectory)
             steering_angle_pure_pursuit = self.pure_pursuit_controller.compute_control(current_state, target_point)
             next_state_pure_pursuit = self.pure_pursuit_controller.apply_control(current_state, steering_angle_pure_pursuit, velocity=0.5)
 
