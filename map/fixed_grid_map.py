@@ -36,8 +36,9 @@ if __name__ == "__main__":
 
     plt.xlim(-1, map_instance.lot_width + 1)
     plt.ylim(-1, map_instance.lot_height + 1)
-    plt.title("Pure Pursuit Route Planner")
+    plt.title("Fixed Grid Map")
     plt.grid(True)
     plt.xlabel("X [m]")
     plt.ylabel("Y [m]")
+    plt.savefig("results/map_fixed_grid_map.png")
     plt.show()

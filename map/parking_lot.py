@@ -52,4 +52,5 @@ if __name__ == "__main__":
     plt.xlabel("X [m]")
     plt.ylabel("Y [m]")
     plt.axis("equal")
+    plt.savefig("results/map_parking_lot.png")
     plt.show()

@@ -183,9 +183,10 @@ if __name__ == "__main__":
 
     plt.xlim(-1, map_instance.lot_width + 1)
     plt.ylim(-1, map_instance.lot_height + 1)
-    plt.title("Complex Grid Map with Path")
+    plt.title("Base Grid Map")
     plt.grid(True)
     plt.xlabel("X [m]")
     plt.ylabel("Y [m]")
     plt.axis("equal")
+    plt.savefig("results/map_grid_map.png")
     plt.show()
