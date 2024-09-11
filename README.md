@@ -23,10 +23,10 @@ ADLAB-PLANNING
 |       parking_lot.py                          # map: parking lot grid map
 |
 +---results
-|       map_complex_grid_map.png                # map: random obstacle grid map
-|       map_fixed_grid_map.png                  # map: fixed obstacle grid map
-|       map_grid_map.png                        # map: base grid map
-|       map_parking_lot.png                     # map: parking lot grid map
+|       map_complex_grid_map.png                # results: random obstacle grid map
+|       map_fixed_grid_map.png                  # results: fixed obstacle grid map
+|       map_grid_map.png                        # results: base grid map
+|       map_parking_lot.png                     # results: parking lot grid map
 |
 +---route_planner
 |       a_star_route_planner.py                 # route planner: a star 
