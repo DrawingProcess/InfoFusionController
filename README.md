@@ -36,5 +36,7 @@ ADLAB-PLANNING
 
 ## Env Settings
 
-$ export QT_QPA_PLATFORM=xcb
-$ export PYTHONPATH="$PYTHONPATH:$PWD"
+```shell
+export QT_QPA_PLATFORM=xcb
+export PYTHONPATH="$PYTHONPATH:$PWD"
+```
