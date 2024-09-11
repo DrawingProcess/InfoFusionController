@@ -7,18 +7,26 @@ ADLAB-PLANNING
 |   utils.py                                    # utils: calculate, tranform, ...
 |
 +---control
-|       mpc_adaptive.py                         # control: adaptive MPC
-|       mpc_basic.py                            # control: basic MPC 
-|       mpc_basic_parallel.py                   # control: basic MPC parallel processing
-|       pure_pursuit.py                         # control: pure pursuit
-|       stanley.py                              # control: stanley
+|       adaptive_mpc_controller.py              # control: adaptive mpc controller
+|       base_controller.py                      # control: base controller
+|       mi_mpc_purpursuit_controller.py         # control: mutual information mpc pure pursuit controller
+|       mpc_controller.py                       # control: mpc controller
+|       mpc_parallel_controller.py              # control: mpc parallel controller
+|       multi_purpose_mpc_controller.py         # control: multi purpose mpc controller
+|       pure_pursuit_controller.py              # control: pure pursuit controller
+|       stanley_controller.py                   # control: stanley controller
 |
 +---map
-|       grid_map.py                             # map: base grid map
 |       complex_grid_map.py                     # map: random obstacle grid map
+|       fixed_grid_map.py                       # map: fixed obstacle grid map
+|       grid_map.py                             # map: base grid map
 |       parking_lot.py                          # map: parking lot grid map
 |
-+---results                                     # results: stanley
++---results
+|       map_complex_grid_map.png                # map: random obstacle grid map
+|       map_fixed_grid_map.png                  # map: fixed obstacle grid map
+|       map_grid_map.png                        # map: base grid map
+|       map_parking_lot.png                     # map: parking lot grid map
 |
 +---route_planner
 |       a_star_route_planner.py                 # route planner: a star 
