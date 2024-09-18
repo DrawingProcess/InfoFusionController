@@ -118,16 +118,9 @@ def main(map_type="ComplexGridMap"):
     print(f"Start MPC Controller (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
     # 맵과 장애물 및 시작/목표 지점을 표시
-    map_instance.plot_map()
+    map_instance.plot_map(title="Multi-Purpose MPC Route Planner")
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
-    plt.xlim(-1, map_instance.lot_width + 1)
-    plt.ylim(-1, map_instance.lot_height + 1)
-    plt.title("MPC Route Planner")
-    plt.xlabel("X [m]")
-    plt.ylabel("Y [m]")
-    plt.grid(True)
-    plt.axis("equal")
 
     # Create Informed TRRT* planner
     informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)

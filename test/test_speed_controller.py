@@ -43,18 +43,7 @@ def main():
     print(f"Start planning (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
     # show_process 변수로 show_process와 show_eclipse 제어
-    show_process = False
-
-    if show_process:
-        map_instance.plot_map()
-        plt.plot(start_pose.x, start_pose.y, "og")
-        plt.plot(goal_pose.x, goal_pose.y, "xb")
-        plt.xlim(-1, map_instance.lot_width + 1)
-        plt.ylim(-1, map_instance.lot_height + 1)
-        plt.xlabel("X [m]")
-        plt.ylabel("Y [m]")
-        plt.grid(True)
-        plt.axis("equal")
+    show_process = True
 
     # Informed TRRT* Planner
     planner = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
@@ -83,7 +72,11 @@ def main():
         while(True):  # 10번 반복 실행
             if count >= 10:
                 break
-
+            plt.clf()
+            if show_process:
+                map_instance.plot_map(title=f"{name} Controller")
+                plt.plot(start_pose.x, start_pose.y, "og")
+                plt.plot(goal_pose.x, goal_pose.y, "xb")
             start_time = time.time()
             rx, ry, rx_opt, ry_opt = planner.search_route(show_process=False)
             end_time = time.time()

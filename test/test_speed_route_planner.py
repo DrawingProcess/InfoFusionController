@@ -19,7 +19,7 @@ from route_planner.informed_trrt_star_planner import InformedTRRTStar
 # 메인 함수
 def main():
     parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")
-    parser.add_argument('--map', type=str, default='parking_lot', choices=['parking_lot', 'fixed_grid', 'complex_grid'], help='Choose the map type.')
+    parser.add_argument('--map', type=str, default='fixed_grid', choices=['parking_lot', 'fixed_grid', 'complex_grid'], help='Choose the map type.')
     args = parser.parse_args()
 
     # Map selection using dictionary
@@ -42,18 +42,7 @@ def main():
     print(f"Start planning (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
     # show_process 변수로 show_process와 show_eclipse 제어
-    show_process = False
-
-    if show_process:
-        map_instance.plot_map()
-        plt.plot(start_pose.x, start_pose.y, "og")
-        plt.plot(goal_pose.x, goal_pose.y, "xb")
-        plt.xlim(-1, map_instance.lot_width + 1)
-        plt.ylim(-1, map_instance.lot_height + 1)
-        plt.xlabel("X [m]")
-        plt.ylabel("Y [m]")
-        plt.grid(True)
-        plt.axis("equal")
+    show_process = True
 
     # 성능 테스트를 위한 알고리즘 함수들
     algorithms = {
@@ -74,6 +63,12 @@ def main():
         total_time = 0.0
         for _ in range(10):  # 10번 반복 실행
             # 경로 생성 실패 여부 확인 (빈 리스트로 반환되면 실패)
+            plt.clf()  # 각 알고리즘 실행 전 플롯 초기화
+            if show_process:
+                map_instance.plot_map(title=f"{name} Route Planner")
+                plt.plot(start_pose.x, start_pose.y, "og")
+                plt.plot(goal_pose.x, goal_pose.y, "xb")
+            
             start_time = time.time()  # 시작 시간
             result = func()
             end_time = time.time()    # 종료 시간

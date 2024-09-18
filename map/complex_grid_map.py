@@ -64,7 +64,7 @@ class ComplexGridMap(GridMap):
                         self.grid[y][x] = 1
                         self.obstacles.append((x, y))
 
-    def plot_map(self, path=None):
+    def plot_map(self, title, path=None):
         obstacle_x = [x for x, y in self.obstacles]
         obstacle_y = [y for x, y in self.obstacles]
         plt.plot(obstacle_x, obstacle_y, ".k")  # 장애물은 검은색 점으로 표시
@@ -85,17 +85,18 @@ class ComplexGridMap(GridMap):
             path_y = [y for x, y in path]
             plt.plot(path_x, path_y, "-or")  # 경로는 빨간색 원으로 연결된 선으로 표시
 
+        plt.xlim(-1, self.lot_width + 1)
+        plt.ylim(-1, self.lot_height + 1)
+        plt.title(title)
+        plt.xlabel("X [m]")
+        plt.ylabel("Y [m]")
+        plt.grid(True)
+        plt.axis("equal")
+
 if __name__ == "__main__":
     # 맵 크기를 지정하여 GridMap 생성 (예: 100x75)
     map_instance = ComplexGridMap(lot_width=100, lot_height=80)
-    map_instance.plot_map()
+    map_instance.plot_map(title="Complex Grid Map")
 
-    plt.xlim(-1, map_instance.lot_width + 1)
-    plt.ylim(-1, map_instance.lot_height + 1)
-    plt.title("Complex Grid Map")
-    plt.grid(True)
-    plt.xlabel("X [m]")
-    plt.ylabel("Y [m]")
-    plt.axis("equal")
     plt.savefig("results/map_complex_grid_map.png")
     plt.show()

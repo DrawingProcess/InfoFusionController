@@ -134,16 +134,9 @@ def main(map_type="ComplexGridMap"):
     goal_pose = map_instance.get_random_valid_goal_position()
     print(f"Start Informed-TRRT* Route Planner (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
-    map_instance.plot_map()
+    map_instance.plot_map(title="Informed-TRRT* Route Planner")
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
-    plt.xlim(-1, map_instance.lot_width + 1)
-    plt.ylim(-1, map_instance.lot_height + 1)
-    plt.title("Informed-TRRT* Route Planner")
-    plt.xlabel("X [m]")
-    plt.ylabel("Y [m]")
-    plt.grid(True)
-    plt.axis("equal")
 
     informed_trrt_star = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
     rx, ry, rx_opt, ry_opt = informed_trrt_star.search_route(show_process=False)

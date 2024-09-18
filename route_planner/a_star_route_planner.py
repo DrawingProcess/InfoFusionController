@@ -126,14 +126,9 @@ def main(map_type="ComplexGridMap"):
     goal_pose = map_instance.get_random_valid_goal_position()
     print(f"Start A Star Route Planner (start ({start_pose.x}, {start_pose.y}), end ({goal_pose.x}, {goal_pose.y}))")
 
-    map_instance.plot_map()
+    map_instance.plot_map(title="A Star Route Planner")
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
-    plt.title("A Star Route Planner")
-    plt.grid(True)
-    plt.xlabel("X [m]")
-    plt.ylabel("Y [m]")
-    plt.axis("equal")
 
     a_star = AStarRoutePlanner(start_pose, goal_pose, map_instance)
     rx, ry = a_star.search_route(False)

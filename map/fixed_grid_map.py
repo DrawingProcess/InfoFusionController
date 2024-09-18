@@ -32,13 +32,6 @@ class FixedGridMap(GridMap):
 
 if __name__ == "__main__":
     map_instance = FixedGridMap()
-    map_instance.plot_map()
-
-    plt.xlim(-1, map_instance.lot_width + 1)
-    plt.ylim(-1, map_instance.lot_height + 1)
-    plt.title("Fixed Grid Map")
-    plt.grid(True)
-    plt.xlabel("X [m]")
-    plt.ylabel("Y [m]")
+    map_instance.plot_map(title="Fixed Grid Map")
     plt.savefig("results/map_fixed_grid_map.png")
     plt.show()

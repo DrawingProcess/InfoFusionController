@@ -77,16 +77,9 @@ def main():
     }
     controller = controller_options[args.controller]
 
-    map_instance.plot_map()
+    map_instance.plot_map(f"{args.controller.capitalize()} Route Planner")
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
-    plt.xlim(-1, map_instance.lot_width + 1)
-    plt.ylim(-1, map_instance.lot_height + 1)
-    plt.title(f"{args.controller.capitalize()} Route Planner")
-    plt.xlabel("X [m]")
-    plt.ylabel("Y [m]")
-    plt.grid(True)
-    plt.axis("equal")
 
     # Generate the route
     try:

@@ -96,16 +96,9 @@ def main(map_type="ComplexGridMap"):
     goal_pose = map_instance.get_random_valid_goal_position()
     print(f"Start Path Planning (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
-    map_instance.plot_map()
+    map_instance.plot_map(title="Path Planning with MPC and Pure Pursuit")
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
-    plt.xlim(-1, map_instance.lot_width + 1)
-    plt.ylim(-1, map_instance.lot_height + 1)
-    plt.title("Path Planning with MPC and Pure Pursuit")
-    plt.xlabel("X [m]")
-    plt.ylabel("Y [m]")
-    plt.grid(True)
-    plt.axis("equal")
 
     informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
     try:
