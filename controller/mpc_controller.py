@@ -87,10 +87,10 @@ class MPCController(BaseController):
             control_input = self.optimize_control(current_state, ref_segment)
             next_state = self.apply_control(current_state, control_input)
 
+            adjusted_states = self.avoid_obstacle(current_state, next_state)
             if not self.is_collision_free(current_state, next_state):
                 print(f"Collision detected at step {i}. Attempting to avoid obstacle...")
-                adjusted_targets = self.avoid_obstacle(current_state, next_state)
-                is_reached, next_state = self.select_best_path(current_state, adjusted_targets, goal_position)
+                is_reached, next_state = self.select_best_path(current_state, adjusted_states, goal_position)
                 if not is_reached:
                     print("Goal not reachable.")
                     return is_reached, 0, np.array(trajectory)

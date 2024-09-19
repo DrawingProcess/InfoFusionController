@@ -14,14 +14,14 @@ class BaseController:
         self.wheelbase = wheelbase  # Wheelbase of the vehicle
         self.map_instance = map_instance  # Map instance for collision checking
     
-    def compute_control(self, current_state, target_point):
+    def compute_control(self, current_state, target_state):
         # 현재 상태와 목표 지점의 좌표를 추출
         x, y, theta = current_state[:3]
-        target_x, target_y = target_point[:2]
+        target_x, target_y = target_state[:2]
 
         # 현재 위치와 목표 지점 간의 상대 위치 계산
-        dx = target_point[0] - x
-        dy = target_point[1] - y
+        dx = target_x - x
+        dy = target_y - y
         target_angle = math.atan2(dy, dx)
 
         # 차량의 조향각 계산 (Pure Pursuit 공식)
@@ -73,21 +73,30 @@ class BaseController:
             adjusted_targets.append(target_xy + perpendicular_vector1 * dist)
             adjusted_targets.append(target_xy + perpendicular_vector2 * dist)
 
-        return adjusted_targets
+        # 각 adjusted_targets에 기존 target_state의 theta와 velocity를 유지하면서 좌표를 업데이트
+        adjusted_states = []
+        for adjusted_target in adjusted_targets:
+            x, y = adjusted_target
+            theta = target_state[2]  # 기존 target_state의 theta 유지
+            velocity = target_state[3]  # 기존 target_state의 velocity 유지
+            new_state = [x, y, theta, velocity]
+            adjusted_states.append(new_state)
 
-    def select_best_path(self, current_state, adjusted_targets, goal_position):
+        return adjusted_states
+
+    def select_best_path(self, current_state, adjusted_states, goal_position):
         best_target = None
         min_distance = float('inf')
 
-        for i, adjusted_target in enumerate(adjusted_targets):
-            if self.is_collision_free(current_state, adjusted_target):
-                print(f"Adjusted Target {i} is collision-free: {adjusted_target}")
-                distance = np.linalg.norm(adjusted_target[:2] - goal_position)
+        for i, adjusted_state in enumerate(adjusted_states):
+            if self.is_collision_free(current_state, adjusted_state):
+                print(f"Adjusted Target {i} is collision-free: {adjusted_state}")
+                distance = np.linalg.norm(np.array(adjusted_state[:2]) - np.array(goal_position))
                 if distance < min_distance:
                     min_distance = distance
-                    best_target = adjusted_target
+                    best_target = adjusted_state
             else:
-                print(f"Adjusted Target {i} is in collision: {adjusted_target}")
+                print(f"Adjusted Target {i} is in collision: {adjusted_state}")
 
         if best_target is not None:
             return True, best_target
@@ -143,14 +152,14 @@ class BaseController:
 
         predicted_lines = []
 
-        is_reached = False
+        is_reached = True
 
         while not self.is_goal_reached(current_state, goal_position):
             # Find the target index
             target_point = self.find_target_point(current_state, ref_trajectory)
 
             # Generate possible adjusted targets to avoid obstacles
-            adjusted_targets = self.avoid_obstacle(current_state, target_point)
+            adjusted_states = self.avoid_obstacle(current_state, target_point)
 
             if show_process:
                 # Clear the old prediction lines if they exist
@@ -163,18 +172,18 @@ class BaseController:
                 predicted_lines.append(plt.plot(predicted_trajectory[:, 0], predicted_trajectory[:, 1], "b-", label="Predicted Path")[0])
                 colors = ["g--", "r--"]
                 # labels = ["Left Avoid Path", "Right Avoid Path"]
-                for i, adjusted_target in enumerate(adjusted_targets):
-                    predicted_traj = self.predict_trajectory(current_state, adjusted_target)
+                for i, adjusted_state in enumerate(adjusted_states):
+                    predicted_traj = self.predict_trajectory(current_state, adjusted_state)
                     predicted_lines.append(plt.plot(predicted_traj[:, 0], predicted_traj[:, 1], colors[i % 2])[0])
                     # predicted_lines.append(plt.plot(predicted_traj[:, 0], predicted_traj[:, 1], colors[i % 2], label=labels[i % 2])[0])
                     # Mark adjusted target points with a red 'X' and add to predicted_lines for clearing later
-                    marker = plt.plot(adjusted_target[0], adjusted_target[1], 'rx')[0]
+                    marker = plt.plot(adjusted_state[0], adjusted_state[1], 'rx')[0]
                     predicted_lines.append(marker)
                 plt.legend()
                 plt.pause(0.001)
             
             if not self.is_collision_free(current_state, target_point):
-                is_reached, target_point = self.select_best_path(current_state, adjusted_targets, goal_position)
+                is_reached, target_point = self.select_best_path(current_state, adjusted_states, goal_position)
             
             # Apply control
             steering_angle = self.compute_control(current_state, target_point)
@@ -182,7 +191,7 @@ class BaseController:
             trajectory.append(current_state)
 
         # If the goal is still not reached, adjust the final position
-        if not self.is_goal_reached(current_state, goal_position):
+        if self.is_goal_reached(current_state, goal_position):
             print("Final adjustment to reach the goal.")
             current_state[0], current_state[1] = goal_position
             current_state[2] = calculate_angle(current_state[0], current_state[1], goal_position[0], goal_position[1])
