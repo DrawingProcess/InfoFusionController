@@ -171,5 +171,10 @@ def main():
     ax3.set_title("Algorithm Performance Comparison (10 Runs)")
     ax3.grid(True)
 
+    # Adjust layout and show plot
+    plt.tight_layout()  # Ensure there's enough space between the plots
+    plt.savefig("results/test_route_planner/performance_route_planner.png")
+    plt.show()
+
 if __name__ == "__main__":
     main()

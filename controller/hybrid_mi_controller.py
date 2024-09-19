@@ -9,7 +9,7 @@ from map.parking_lot import ParkingLot
 from map.complex_grid_map import ComplexGridMap
 
 from controller.base_controller import BaseController
-from controller.mpc_controller import MPCController
+from controller.adaptive_mpc_controller import AdaptiveMPCController
 from controller.pure_pursuit_controller import PurePursuitController
 
 from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
@@ -23,7 +23,8 @@ def mutual_information(route1, route2):
     joint_hist, _, _ = np.histogram2d(route1[:, 0], route2[:, 0], bins=20, density=True)
     joint_entropy = entropy(joint_hist.flatten())
     mi = entropy1 + entropy2 - joint_entropy
-    return mi
+    nmi = mi / np.sqrt(entropy1 * entropy2) # normalized mutual information
+    return nmi
 
 def optimize_combined_path(state_mpc, state_pure_pursuit, mi):
     """현재 스텝에서 두 경로를 상호 정보에 따라 결합하여 최적 경로 상태 생성"""
@@ -46,7 +47,7 @@ def optimize_combined_path(state_mpc, state_pure_pursuit, mi):
 class HybridMIController(BaseController):
     def __init__(self, horizon, dt, wheelbase, map_instance):
         super().__init__(dt, wheelbase, map_instance)
-        self.mpc_controller = MPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
+        self.mpc_controller = AdaptiveMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
         self.pure_pursuit_controller = PurePursuitController(lookahead_distance=5.0, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
 
     def follow_trajectory(self, start_pose, ref_trajectory, goal_position, show_process=False):
@@ -68,11 +69,12 @@ class HybridMIController(BaseController):
             steering_angle_pure_pursuit = self.pure_pursuit_controller.compute_control(current_state, target_state)
             next_state_pure_pursuit = self.pure_pursuit_controller.apply_control(current_state, steering_angle_pure_pursuit, velocity=0.5)
 
-            print(next_state_mpc)
-            print(next_state_pure_pursuit)
+            print(f"Next State MPC: {next_state_mpc}")
+            print(f"Next State Pure Pursuit: {next_state_pure_pursuit}")
 
             # 현재 스텝에서 두 경로 간의 Mutual Information 계산
             mi = mutual_information(np.array([next_state_mpc]), np.array([next_state_pure_pursuit]))
+            print(f"Mutual Information: {mi}")
 
             # 두 경로를 결합하여 최적 경로 생성
             combined_state = optimize_combined_path(next_state_mpc, next_state_pure_pursuit, mi)
