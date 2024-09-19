@@ -7,25 +7,34 @@ def calculate_angle(x_start, y_start, x_end, y_end):
     dy = y_end - y_start
     return math.atan2(dy, dx)
 
-def transform_arrays_with_angles(x_array, y_array, num_points=50, velocity=1.0, last_segment_factor=5):
-    x_array = np.array(x_array)
-    y_array = np.array(y_array)
+def calculate_trajectory_distance(trajectory):
+    trajectory = np.array(trajectory)
+    # 각 점 사이의 유클리드 거리를 계산하여 총 거리를 산출
+    distances = np.sqrt(np.diff(trajectory[:, 0])**2 + np.diff(trajectory[:, 1])**2)
+    total_distance = np.sum(distances)
+    return total_distance
+
+def transform_trajectory(x_array, y_array):
+    return np.array([list(pair) for pair in zip(x_array, y_array)])
+
+def transform_trajectory_with_angles(trajectory, num_points=50, velocity=1.0, last_segment_factor=5):
+    trajectory = np.array(trajectory)  # trajectory를 numpy 배열로 변환
     
-    n = len(x_array)
+    n = len(trajectory)
     transformed_list = []
 
     for i in range(n - 1):
         # Get segment start and end
-        x_start, x_end = x_array[i], x_array[i + 1]
-        y_start, y_end = y_array[i], y_array[i + 1]
+        x_start, y_start = trajectory[i]
+        x_end, y_end = trajectory[i + 1]
         
         # Calculate angle for current segment
         theta_current = calculate_angle(x_start, y_start, x_end, y_end)
         
         # Calculate angle for the next segment
         if i < n - 2:
-            x_next_start, x_next_end = x_array[i + 1], x_array[i + 2]
-            y_next_start, y_next_end = y_array[i + 1], y_array[i + 2]
+            x_next_start, y_next_start = trajectory[i + 1]
+            x_next_end, y_next_end = trajectory[i + 2]
             theta_next = calculate_angle(x_next_start, y_next_start, x_next_end, y_next_end)
         else:
             # Use the same angle for the last segment if there's no next segment
@@ -55,7 +64,7 @@ def transform_arrays_with_angles(x_array, y_array, num_points=50, velocity=1.0, 
     
     return np.array(transformed_list)
 
-# def transform_arrays_with_angles(x_array, y_array, num_points=20, velocity=2.0, last_segment_factor=5):
+# def transform_trajectory_with_angles(x_array, y_array, num_points=20, velocity=2.0, last_segment_factor=5):
 #     x_array = np.array(x_array)
 #     y_array = np.array(y_array)
     

@@ -2,7 +2,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 
-from utils import calculate_angle, transform_arrays_with_angles
+from utils import calculate_angle, calculate_trajectory_distance, transform_trajectory_with_angles
 
 from map.parking_lot import ParkingLot
 from map.complex_grid_map import ComplexGridMap
@@ -109,7 +109,7 @@ class BaseController:
         distance_to_goal = np.hypot(current_state[0] - goal_position[0], current_state[1] - goal_position[1])
         return distance_to_goal < tolerance
 
-    def find_target_point(self, state, ref_trajectory):
+    def find_target_state(self, state, ref_trajectory):
         x, y, theta = state[:3]
         min_distance = float('inf')
         target_index = 0
@@ -120,13 +120,18 @@ class BaseController:
             if distance < min_distance:
                 min_distance = distance
                 target_index = i
-        
+
+        # target_index가 경로의 끝을 초과하지 않도록 마지막 지점을 선택
         if target_index >= len(ref_trajectory):
             target_point = ref_trajectory[-1]
         else:
             target_point = ref_trajectory[target_index]
 
-        return target_point
+        # target_point를 target_state로 변환 (theta와 velocity 추가)
+        velocity = state[3] if len(state) > 3 else 0.0  # 속도가 없을 경우 기본값 0.0 사용
+        target_state = [target_point[0], target_point[1], theta, velocity]
+
+        return target_state
 
     def predict_trajectory(self, current_state, target_point, n_steps=10, velocity=0.5):
         # Predict future trajectory using the kinematic bicycle model
@@ -137,12 +142,6 @@ class BaseController:
             state = self.apply_control(state, steering_angle, velocity)
             predicted_trajectory.append(state.copy())
         return np.array(predicted_trajectory)
-
-    def calculate_trajectory_distance(self, trajectory):
-        # 각 점 사이의 유클리드 거리를 계산하여 총 거리를 산출
-        distances = np.sqrt(np.diff(trajectory[:, 0])**2 + np.diff(trajectory[:, 1])**2)
-        total_distance = np.sum(distances)
-        return total_distance
 
     def follow_trajectory(self, start_pose, ref_trajectory, goal_position, show_process=False):
         # Initialize the state and trajectory
@@ -156,10 +155,10 @@ class BaseController:
 
         while not self.is_goal_reached(current_state, goal_position):
             # Find the target index
-            target_point = self.find_target_point(current_state, ref_trajectory)
+            target_state = self.find_target_state(current_state, ref_trajectory)
 
             # Generate possible adjusted targets to avoid obstacles
-            adjusted_states = self.avoid_obstacle(current_state, target_point)
+            adjusted_states = self.avoid_obstacle(current_state, target_state)
 
             if show_process:
                 # Clear the old prediction lines if they exist
@@ -168,7 +167,7 @@ class BaseController:
                 predicted_lines = []
 
                 # Plot the new prediction lines
-                predicted_trajectory = self.predict_trajectory(current_state, target_point)
+                predicted_trajectory = self.predict_trajectory(current_state, target_state)
                 predicted_lines.append(plt.plot(predicted_trajectory[:, 0], predicted_trajectory[:, 1], "b-", label="Predicted Path")[0])
                 colors = ["g--", "r--"]
                 # labels = ["Left Avoid Path", "Right Avoid Path"]
@@ -182,11 +181,14 @@ class BaseController:
                 plt.legend()
                 plt.pause(0.001)
             
-            if not self.is_collision_free(current_state, target_point):
-                is_reached, target_point = self.select_best_path(current_state, adjusted_states, goal_position)
+            if not self.is_collision_free(current_state, target_state):
+                is_reached, target_state = self.select_best_path(current_state, adjusted_states, goal_position)
+                if not is_reached:
+                    print("Goal not reachable.")
+                    return is_reached, 0, np.array(trajectory)
             
             # Apply control
-            steering_angle = self.compute_control(current_state, target_point)
+            steering_angle = self.compute_control(current_state, target_state)
             current_state = self.apply_control(current_state, steering_angle, velocity=0.5)  # Constant velocity
             trajectory.append(current_state)
 
@@ -197,7 +199,7 @@ class BaseController:
             current_state[2] = calculate_angle(current_state[0], current_state[1], goal_position[0], goal_position[1])
             trajectory.append(current_state)
 
-        total_distance = self.calculate_trajectory_distance(np.array(trajectory))
+        total_distance = calculate_trajectory_distance(trajectory)
 
         print("Trajectory following completed.")
         return is_reached, total_distance, np.array(trajectory)
@@ -217,19 +219,19 @@ def main(map_type="ComplexGridMap"):
     plt.plot(goal_pose.x, goal_pose.y, "xb")
 
     # Create Informed TRRT* planner
-    informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
-    rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
+    route_planner = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
+    isReached, total_distance, route_trajectory, route_trajectory_opt = route_planner.search_route(show_process=False)
 
     try:
-        rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
+        isReached, total_distance, route_trajectory, route_trajectory_opt = route_planner.search_route(show_process=False)
     except Exception as e:
         print(f"Error in route generation: {e}")
         return
 
-    ref_trajectory = transform_arrays_with_angles(rx_opt, ry_opt)
+    ref_trajectory = transform_trajectory_with_angles(route_trajectory_opt)
 
-    plt.plot(rx, ry, "g--", label="Theta* Path")  # Green dashed line
-    plt.plot(rx_opt, ry_opt, "-r", label="Informed TRRT* Path")  # Red solid line
+    plt.plot(route_trajectory[:, 0], route_trajectory[:, 1], "g--", label="Theta* Path")  # Green dashed line
+    plt.plot(route_trajectory_opt[:, 0], route_trajectory_opt[:, 1], "-r", label="Informed TRRT* Path")  # Red solid line
 
     dt = 0.1  # Assume fixed time step of 0.1 seconds
     wheelbase = 2.5  # Example wheelbase of the vehicle in meters

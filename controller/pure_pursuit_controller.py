@@ -2,7 +2,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 
-from utils import calculate_angle, transform_arrays_with_angles
+from utils import calculate_angle, transform_trajectory_with_angles
 from map.parking_lot import ParkingLot
 from map.complex_grid_map import ComplexGridMap
 
@@ -15,7 +15,7 @@ class PurePursuitController(BaseController):
         super().__init__(dt, wheelbase, map_instance)
         self.lookahead_distance = lookahead_distance  # Lookahead distance for Pure Pursuit
 
-    def find_target_point(self, state, ref_trajectory):
+    def find_target_state(self, state, ref_trajectory):
         x, y, theta = state[:3]
         min_distance = float('inf')
         target_index = 0
@@ -36,11 +36,15 @@ class PurePursuitController(BaseController):
         else:
             target_point = ref_trajectory[target_index]
 
-        return target_point
+        # target_point를 target_state로 변환 (theta와 velocity 추가)
+        velocity = state[3] if len(state) > 3 else 0.0  # 속도가 없을 경우 기본값 0.0 사용
+        target_state = [target_point[0], target_point[1], theta, velocity]
 
-    def compute_control(self, state, target_point):
+        return target_state
+
+    def compute_control(self, state, target_state):
         x, y, theta = state[:3]
-        target_x, target_y = target_point[:2]
+        target_x, target_y = target_state[:2]
 
         # 각도 오차 계산
         dx = target_x - x
@@ -68,19 +72,19 @@ def main(map_type="ComplexGridMap"):
     plt.plot(goal_pose.x, goal_pose.y, "xb")
 
     # Create Informed TRRT* planner
-    informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
-    rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
+    route_planner = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
+    isReached, total_distance, route_trajectory, route_trajectory_opt = route_planner.search_route(show_process=False)
 
     try:
-        rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
+        isReached, total_distance, route_trajectory, route_trajectory_opt = route_planner.search_route(show_process=False)
     except Exception as e:
         print(f"Error in route generation: {e}")
         return
 
-    ref_trajectory = transform_arrays_with_angles(rx_opt, ry_opt)
+    ref_trajectory = transform_trajectory_with_angles(route_trajectory_opt)
 
-    plt.plot(rx, ry, "g--", label="Theta* Path")  # Green dashed line
-    plt.plot(rx_opt, ry_opt, "-r", label="Informed TRRT* Path")  # Red solid line
+    plt.plot(route_trajectory[:, 0], route_trajectory[:, 1], "g--", label="Theta* Path")  # Green dashed line
+    plt.plot(route_trajectory_opt[:, 0], route_trajectory_opt[:, 1], "-r", label="Informed TRRT* Path")  # Red solid line
 
     wheelbase = 2.5  # Example wheelbase of the vehicle in meters
     lookahead_distance = 5.0  # Example lookahead distance in meters

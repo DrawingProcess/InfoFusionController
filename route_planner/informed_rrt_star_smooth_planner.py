@@ -3,6 +3,8 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 
+from utils import calculate_trajectory_distance, transform_trajectory
+
 from map.parking_lot import ParkingLot
 from map.complex_grid_map import ComplexGridMap
 
@@ -15,27 +17,31 @@ class InformedRRTSmoothStar(InformedRRTStar):
 
     def search_route(self, show_process=True):
         # Generate and optimize the final course
-        rx, ry = super().search_route(show_process)
-        if not rx or not ry:
-            return [], [], [], []
+        isReached, total_distance, route_trajectory = super().search_route(show_process)
+        if not isReached:
+            return isReached, 0, [], []
 
         # Apply smoothing to the final path
-        rx_opt, ry_opt = self.smooth_path(rx, ry)
+        route_trajectory_opt = self.smooth_path(route_trajectory)
+        total_distance = calculate_trajectory_distance(route_trajectory_opt)
+        return isReached, total_distance, route_trajectory, route_trajectory_opt
 
-        return rx, ry, rx_opt, ry_opt
-
-    def smooth_path(self, path_x, path_y):
-        smooth_x, smooth_y = [path_x[0]], [path_y[0]]
+    def smooth_path(self, trajectory):
+        # 첫 번째 점을 바로 추가
+        smooth_trajectory = [trajectory[0]]
         i = 0
-        while i < len(path_x) - 1:
-            for j in range(len(path_x) - 1, i, -1):
-                # Pass a default cost value when creating Node instances
-                if self.is_collision_free(Node(path_x[i], path_y[i], 0.0), Node(path_x[j], path_y[j], 0.0)):
-                    smooth_x.append(path_x[j])
-                    smooth_y.append(path_y[j])
+
+        while i < len(trajectory) - 1:
+            for j in range(len(trajectory) - 1, i, -1):
+                # trajectory에서 x, y를 직접 꺼내서 Node를 생성
+                if self.is_collision_free(Node(trajectory[i][0], trajectory[i][1], 0.0), 
+                                          Node(trajectory[j][0], trajectory[j][1], 0.0)):
+                    # 충돌이 없다면 해당 좌표를 smooth_trajectory에 추가
+                    smooth_trajectory.append(trajectory[j])
                     i = j
                     break
-        return smooth_x, smooth_y
+
+        return np.array(smooth_trajectory)
 
 def main(map_type="ComplexGridMap"):
     # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
@@ -53,17 +59,17 @@ def main(map_type="ComplexGridMap"):
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
 
-    informed_rrt_star = InformedRRTSmoothStar(start_pose, goal_pose, map_instance, show_eclipse=False)
-    rx_rrt, ry_rrt, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=True)
+    route_planner = InformedRRTSmoothStar(start_pose, goal_pose, map_instance, show_eclipse=False)
+    isReached, total_distance, route_trajectory, route_trajectory_opt = route_planner.search_route(show_process=True)
 
-    if not rx_rrt and not ry_rrt:
+    if not isReached:
         print("Goal not reached. No path found.")
     else:
         # Plot Informed RRT* Path
-        plt.plot(rx_rrt, ry_rrt, "g--", label="Informed RRT* Path")  # Green dashed line
+        plt.plot(route_trajectory[:, 0], route_trajectory[:, 1], "g--", label="Informed RRT* Path")  # Green dashed line
 
         # Plot Optimized Path
-        plt.plot(rx_opt, ry_opt, "-r", label="Optimized Path")  # Red solid line
+        plt.plot(route_trajectory_opt[:, 0], route_trajectory_opt[:, 1], "-r", label="Optimized Path")  # Red solid line
 
         plt.legend()
         plt.pause(0.001)

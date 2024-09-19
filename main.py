@@ -22,7 +22,7 @@ from controller.mpc_controller import MPCController
 from controller.adaptive_mpc_controller import AdaptiveMPCController
 from controller.multi_purpose_mpc_controller import MultiPurposeMPCController
 
-from utils import calculate_angle, transform_arrays_with_angles
+from utils import calculate_angle, transform_trajectory_with_angles
 
 def main():
     parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")
@@ -83,17 +83,17 @@ def main():
 
     # Generate the route
     try:
-        rx, ry, rx_opt, ry_opt = route_planner.search_route(show_process=False)
+        isReached, total_distance, route_trajectory, route_trajectory_opt = route_planner.search_route(show_process=False)
     except Exception as e:
         print(f"Error in route generation: {e}")
         return
 
     # Transform reference trajectory
-    ref_trajectory = transform_arrays_with_angles(rx_opt, ry_opt)
+    ref_trajectory = transform_trajectory_with_angles(route_trajectory_opt)
 
     # Plot the route
-    plt.plot(rx, ry, "g--", label=f"{args.route_planner.replace('_', ' ').title()} Path")
-    plt.plot(rx_opt, ry_opt, "-r", label="Optimized Path")
+    plt.plot(route_trajectory[:, 0], route_trajectory[:, 1], "g--", label=f"{args.route_planner.replace('_', ' ').title()} Path")
+    plt.plot(route_trajectory[:, 0], route_trajectory[:, 1], "-r", label="Optimized Path")
 
     # Follow the trajectory using the selected controller
     goal_position = [goal_pose.x, goal_pose.y]

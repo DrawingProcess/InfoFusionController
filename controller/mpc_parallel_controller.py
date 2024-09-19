@@ -8,7 +8,7 @@ import time
 from map.parking_lot import ParkingLot
 from map.complex_grid_map import ComplexGridMap
 from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
-from utils import calculate_angle, transform_arrays_with_angles
+from utils import calculate_angle, calculate_trajectory_distance, transform_trajectory_with_angles
 
 from controller.mpc_controller import MPCController
 
@@ -51,7 +51,7 @@ class MPCParallelController(MPCController):
 
             time.sleep(0.1)  # Slow down to visualize the movement in real-time
 
-        total_distance = self.calculate_trajectory_distance(np.array(trajectory))
+        total_distance = calculate_trajectory_distance(trajectory)
 
         print("Trajectory following completed.")
         return True, total_distance, np.array(trajectory)
@@ -63,21 +63,21 @@ class MPCParallelController(MPCController):
 
 
 def trrt_planning_thread(start_pose, goal_pose, map_instance, mpc_controller, plot_queue):
-    informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
+    route_planner = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
 
     while True:
         # Re-plan the route
-        rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
+        isReached, total_distance, route_trajectory, route_trajectory_opt = route_planner.search_route(show_process=False)
 
-        if rx_opt and ry_opt:
+        if isReached:
             # Transform reference trajectory
-            ref_trajectory = transform_arrays_with_angles(rx_opt, ry_opt)
+            ref_trajectory = transform_trajectory_with_angles(route_trajectory_opt)
 
             # Update the MPC controller with the new trajectory
             mpc_controller.update_trajectory(ref_trajectory)
 
             # Plot the generated TRRT* path
-            plot_queue.put(("trrt", rx, ry, rx_opt, ry_opt))
+            plot_queue.put(("trrt", route_trajectory, route_trajectory_opt))
 
         # Sleep or wait for a condition before the next re-plan (e.g., every 5 seconds)
         time.sleep(5)
@@ -146,11 +146,11 @@ def main(map_type="ComplexGridMap"):
     print(f"Start Adaptive MPC Controller (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
     # 초기 경로 생성
-    informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
-    rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
+    route_planner = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
+    isReached, total_distance, route_trajectory, route_trajectory_opt = route_planner.search_route(show_process=False)
 
-    if rx_opt and ry_opt:
-        ref_trajectory = transform_arrays_with_angles(rx_opt, ry_opt)
+    if isReached:
+        ref_trajectory = transform_trajectory_with_angles(route_trajectory_opt)
     else:
         print("Initial route generation failed.")
         return

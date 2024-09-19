@@ -35,7 +35,7 @@ def main():
         goal_pose = Pose(50.0, 38.0, math.radians(90))
     elif args.map == "fixed_grid":
         start_pose = Pose(3, 5, math.radians(0))
-        goal_pose = Pose(5, 15, math.radians(0))
+        goal_pose = Pose(15, 15, math.radians(0))
     else:
         start_pose = map_instance.get_random_valid_start_position()
         goal_pose = map_instance.get_random_valid_goal_position()
@@ -47,22 +47,23 @@ def main():
     # 성능 테스트를 위한 알고리즘 함수들
     algorithms = {
         "A*": lambda: AStarRoutePlanner(start_pose, goal_pose, map_instance).search_route(show_process),
-        "Theta*": lambda: ThetaStar(start_pose, goal_pose, map_instance).find_path(),
+        "Theta*": lambda: ThetaStar(start_pose, goal_pose, map_instance).search_route(show_process),
         "Hybrid A*": lambda: HybridAStarRoutePlanner(start_pose, goal_pose, map_instance).search_route(show_process),
         "RRT*": lambda: RRTStar(start_pose, goal_pose, map_instance).search_route(show_process),
         "Informed RRT*": lambda: InformedRRTStar(start_pose, goal_pose, map_instance, show_eclipse=show_process).search_route(show_process=show_process),
-        "Informed RRT* (with smoothing)": lambda: InformedRRTSmoothStar(start_pose, goal_pose, map_instance, show_eclipse=show_process).search_route(show_process=show_process),
+        "Informed RRT*(smoothing)": lambda: InformedRRTSmoothStar(start_pose, goal_pose, map_instance, show_eclipse=show_process).search_route(show_process=show_process),
         "Informed TRRT*": lambda: InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=show_process).search_route(show_process=show_process),
     }
 
     # 각 알고리즘의 성능 측정 및 실패 여부 확인
     performance_results = {}
+    distance_results = {}
     fail_counts = {name: 0 for name in algorithms}
 
     for name, func in algorithms.items():
         total_time = 0.0
-        for _ in range(10):  # 10번 반복 실행
-            # 경로 생성 실패 여부 확인 (빈 리스트로 반환되면 실패)
+        total_dist = 0.0
+        for i in range(10):  # 10번 반복 실행
             plt.clf()  # 각 알고리즘 실행 전 플롯 초기화
             if show_process:
                 map_instance.plot_map(title=f"{name} Route Planner")
@@ -73,22 +74,34 @@ def main():
             result = func()
             end_time = time.time()    # 종료 시간
             time_taken = end_time - start_time  # 실행 시간 계산
+
+            total_dist += result[1]
             total_time += time_taken
 
-            if isinstance(result, tuple) and (not result[0] or not result[1]):  # rx, ry가 빈 리스트일 때 실패로 간주
+            if not result[0]:  # if not isReached
                 fail_counts[name] += 1
-            print(result)
 
-        performance_results[name] = total_time / 10  # 평균 실행 시간 계산
+            if show_process:
+                plt.plot(result[2][:, 0], result[2][:, 1], "g--", label="Route Planning Path")  # Green dashed line
+                if len(result) == 4:
+                    plt.plot(result[3][:, 0], result[3][:, 1], "-r", label="Optimized Path")  # Red solid line
+                plt.savefig(f"results/test_route_planner/route_{name}_{i}.png")
+
+        performance_results[name] = total_time / (10 - fail_counts[name])  # 평균 실행 시간 계산
+        distance_results[name] = total_dist / (10 - fail_counts[name])
+        
         print(f"{name}: {performance_results[name]:.6f} 초 (평균)")
 
     # 성능 결과 정렬 및 출력
-    sorted_results = sorted(performance_results.items(), key=lambda x: x[1])
-    for name, time_taken in sorted_results:
+    sorted_performs = sorted(performance_results.items(), key=lambda x: x[1])
+    for name, time_taken in sorted_performs:
         print(f"{name}: {time_taken:.6f} 초 (평균)")
+    sorted_dists = sorted(distance_results.items(), key=lambda x: x[1])
+    for name, dist in sorted_dists:
+        print(f"{name}: {dist:.6f} m (평균)")
 
     # Plot the two charts side-by-side
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))  # 1 row, 2 columns
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 6))  # 1 row, 2 columns
 
     # Failure Counts Plot
     algorithm_names = list(fail_counts.keys())
@@ -100,15 +113,24 @@ def main():
     ax1.grid(True)
 
     # Performance Results Plot
-    algorithm_names = [result[0] for result in sorted_results]
-    times = [result[1] for result in sorted_results]
+    algorithm_names = [result[0] for result in sorted_performs]
+    times = [result[1] for result in sorted_performs]
     ax2.barh(algorithm_names, times, color='skyblue')
     ax2.set_xlabel("Average Execution Time (seconds)")
     ax2.set_title("Algorithm Performance Comparison (10 Runs)")
     ax2.grid(True)
 
+    # Performance Results Plot
+    algorithm_names = [result[0] for result in sorted_dists]
+    dists = [result[1] for result in sorted_dists]
+    ax3.barh(algorithm_names, dists, color='purple')
+    ax3.set_xlabel("Average Trajectory Distance (m)")
+    ax3.set_title("Algorithm Performance Comparison (10 Runs)")
+    ax3.grid(True)
+
     # Adjust layout and show plot
     plt.tight_layout()  # Ensure there's enough space between the plots
+    plt.savefig("results/test_route_planner/performance_route_planner.png")
     plt.show()
 
 if __name__ == "__main__":

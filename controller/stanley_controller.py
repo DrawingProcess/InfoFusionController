@@ -2,7 +2,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 
-from utils import calculate_angle, transform_arrays_with_angles
+from utils import calculate_angle, transform_trajectory_with_angles
 
 from map.parking_lot import ParkingLot
 from map.complex_grid_map import ComplexGridMap
@@ -16,10 +16,10 @@ class StanleyController(BaseController):
         super().__init__(dt=dt, wheelbase=wheelbase, map_instance=map_instance)
         self.k = k  # Control gain for the cross-track error
 
-    def compute_control(self, current_state, target_point):
+    def compute_control(self, current_state, target_state):
         # 현재 상태와 목표 지점의 좌표를 추출
         x, y, theta = current_state[:3]
-        target_x, target_y = target_point[:2]
+        target_x, target_y = target_state[:2]
     
         # 경로 각도 계산
         dx = target_x - x
@@ -62,24 +62,24 @@ def main(map_type="ComplexGridMap"):
     plt.plot(goal_pose.x, goal_pose.y, "xb")
 
     # Create Informed TRRT* planner
-    informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
-    rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
+    route_planner = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
+    isReached, total_distance, route_trajectory, route_trajectory_opt = route_planner.search_route(show_process=False)
 
     # Ensure the route generation is completed
     try:
-        rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
+        isReached, total_distance, route_trajectory, route_trajectory_opt = route_planner.search_route(show_process=False)
     except Exception as e:
         print(f"Error in route generation: {e}")
         return
 
     # Transform reference trajectory
-    ref_trajectory = transform_arrays_with_angles(rx_opt, ry_opt)
+    ref_trajectory = transform_trajectory_with_angles(route_trajectory_opt)
 
     # Plot Theta* Path
-    plt.plot(rx, ry, "g--", label="Theta* Path")  # Green dashed line
+    plt.plot(route_trajectory[:, 0], route_trajectory[:, 1], "g--", label="Theta* Path")  # Green dashed line
 
     # Plot Optimized Path
-    plt.plot(rx_opt, ry_opt, "-r", label="Informed TRRT* Path")  # Red solid line
+    plt.plot(route_trajectory_opt[:, 0], route_trajectory_opt[:, 1], "-r", label="Informed TRRT* Path")  # Red solid line
 
     # Stanley Controller
     k = 0.5  # Example gain for the Stanley controller

@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utils import calculate_angle, transform_arrays_with_angles
+from utils import calculate_angle, calculate_trajectory_distance, transform_trajectory_with_angles
 
 from map.parking_lot import ParkingLot
 from map.complex_grid_map import ComplexGridMap
@@ -98,7 +98,7 @@ class MultiPurposeMPCController(MPCController):
             current_state[2] = calculate_angle(current_state[0], current_state[1], goal_position[0], goal_position[1])
             trajectory.append(current_state)
 
-        total_distance = self.calculate_trajectory_distance(np.array(trajectory))
+        total_distance = calculate_trajectory_distance(trajectory)
 
         print("Trajectory following completed.")
         return True, total_distance, np.array(trajectory)
@@ -123,11 +123,11 @@ def main(map_type="ComplexGridMap"):
     plt.plot(goal_pose.x, goal_pose.y, "xb")
 
     # Create Informed TRRT* planner
-    informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
+    route_planner = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
 
     # Ensure the route generation is completed
     try:
-        rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
+        isReached, total_distance, route_trajectory, route_trajectory_opt = route_planner.search_route(show_process=False)
         if len(rx_opt) == 0 or len(ry_opt) == 0:
             print("TRRT* was unable to generate a valid path.")
             return
@@ -137,13 +137,13 @@ def main(map_type="ComplexGridMap"):
         return
 
     # Transform reference trajectory
-    ref_trajectory = transform_arrays_with_angles(rx_opt, ry_opt)
+    ref_trajectory = transform_trajectory_with_angles(route_trajectory_opt)
 
     # Plot Theta* Path
-    plt.plot(rx, ry, "g--", label="Theta* Path")  # Green dashed line
+    plt.plot(route_trajectory[:, 0], route_trajectory[:, 1], "g--", label="Theta* Path")  # Green dashed line
 
     # Plot Optimized Path 
-    plt.plot(rx_opt, ry_opt, "-r", label="Informed TRRT* Path")  # Red solid line
+    plt.plot(route_trajectory_opt[:, 0], route_trajectory_opt[:, 1], "-r", label="Informed TRRT* Path")  # Red solid line
 
     # MPC Controller
     wheelbase = 2.5  # Example wheelbase of the vehicle in meters

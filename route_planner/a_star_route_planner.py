@@ -1,6 +1,8 @@
 import math
 import matplotlib.pyplot as plt
 
+from utils import transform_trajectory, calculate_trajectory_distance
+
 from map.parking_lot import ParkingLot
 from map.complex_grid_map import ComplexGridMap
 
@@ -43,7 +45,11 @@ class AStarRoutePlanner:
                 # goal_node의 parent_node_index를 현재 노드의 parent_node_index로 설정
                 self.goal_node = current_node
                 self.goal_node.parent = current_node.parent
-                return self.process_route(closed_set)
+                
+                rx, ry = self.process_route(closed_set)
+                route_trajectory = transform_trajectory(rx, ry)
+                total_distance = calculate_trajectory_distance(route_trajectory)
+                return True, total_distance, route_trajectory
 
             # Remove the item from the open set
             del open_set[current_node_index]
@@ -78,7 +84,7 @@ class AStarRoutePlanner:
                             open_set[next_node_index] = next_node
 
         print("Cannot find Route")
-        return [], []
+        return False, 0, []
 
     def process_route(self, closed_set):
         rx = [round(self.goal_node.x)]
@@ -131,9 +137,9 @@ def main(map_type="ComplexGridMap"):
     plt.plot(goal_pose.x, goal_pose.y, "xb")
 
     a_star = AStarRoutePlanner(start_pose, goal_pose, map_instance)
-    rx, ry = a_star.search_route(False)
+    isReached, total_distance, route_trajectory = a_star.search_route(False)
 
-    plt.plot(rx, ry, "-r")
+    plt.plot(route_trajectory[:, 0], route_trajectory[:, 1], "-r")
     plt.pause(0.001)
     plt.show()
 

@@ -2,6 +2,8 @@ import math
 import random
 import matplotlib.pyplot as plt
 
+from utils import calculate_trajectory_distance, transform_trajectory
+
 from map.parking_lot import ParkingLot
 from map.complex_grid_map import ComplexGridMap
 
@@ -116,9 +118,13 @@ class RRTStar:
 
         if not self.goal_reached:
             print("Goal Not Reached")
-            return [], []
+            return False, 0, []
+        
+        rx, ry = self.generate_final_course()
+        route_trajectory = transform_trajectory(rx, ry)
+        total_distance = calculate_trajectory_distance(route_trajectory)
 
-        return self.generate_final_course()
+        return True, total_distance, route_trajectory
 
     def generate_final_course(self):
         rx, ry = [], []
@@ -157,12 +163,12 @@ def main(map_type="ComplexGridMap"):
     plt.plot(goal_pose.x, goal_pose.y, "xb")
 
     rrt_star = RRTStar(start_pose, goal_pose, map_instance)
-    rx, ry = rrt_star.search_route()
+    isReached, total_distance, route_trajectory = rrt_star.search_route()
 
-    if not rx and not ry:
+    if not isReached:
         print("Goal not reached. No path found.")
     else:
-        plt.plot(rx, ry, "-r", label="Planned Path")
+        plt.plot(route_trajectory[:, 0], route_trajectory[:, 1], "-r", label="Planned Path")
 
         plt.legend()
         plt.pause(0.001)

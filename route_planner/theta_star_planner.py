@@ -2,6 +2,8 @@ import heapq
 import math
 import matplotlib.pyplot as plt
 
+from utils import transform_trajectory, calculate_trajectory_distance
+
 from map.parking_lot import ParkingLot
 from map.complex_grid_map import ComplexGridMap
 from route_planner.geometry import Pose, Node
@@ -57,15 +59,21 @@ class ThetaStar:
                 self.f_score[neighbor] = new_g + self.heuristic(neighbor, self.goal)
                 heapq.heappush(self.open_set, (self.f_score[neighbor], neighbor))
 
-    def find_path(self):
+    def search_route(self, show_process=False):
         heapq.heappush(self.open_set, (self.f_score[self.start], self.start))
         self.came_from[self.start] = self.start
 
         while self.open_set:
             _, current_node = heapq.heappop(self.open_set)
 
+            if show_process:
+                self.plot_process(current_node)
+            
             if current_node.x == self.goal.x and current_node.y == self.goal.y:
-                return self.reconstruct_path(current_node)
+                rx, ry = self.reconstruct_path(current_node)
+                route_trajectory = transform_trajectory(rx, ry)
+                total_distance = calculate_trajectory_distance(route_trajectory)
+                return True, total_distance, route_trajectory
 
             self.closed_set.add((current_node.x, current_node.y))
 
@@ -75,7 +83,7 @@ class ThetaStar:
 
                 self.update_vertex(current_node, neighbor)
 
-        return [], []  # 빈 경로 반환
+        return False, 0, []
 
     def reconstruct_path(self, current_node):
         x_path = []
@@ -89,6 +97,16 @@ class ThetaStar:
         x_path.reverse()
         y_path.reverse()
         return x_path, y_path
+
+    @staticmethod
+    def plot_process(current_node):
+        # show graph
+        plt.plot(current_node.x, current_node.y, "xc")
+        # for stopping simulation with the esc key.
+        plt.gcf().canvas.mpl_connect(
+            "key_release_event",
+            lambda event: [exit(0) if event.key == "escape" else None],
+        )
 
 def main(map_type="ComplexGridMap"):
     # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
@@ -118,17 +136,11 @@ def main(map_type="ComplexGridMap"):
     theta_star = ThetaStar(start_node, goal_node, map_instance)
 
     # 경로 찾기
-    rx, ry = theta_star.find_path()
+    isReached, total_distance, route_trajectory = theta_star.search_route()
 
-    if rx and ry:
-        plt.plot(rx, ry, "-r", label="Theta* Path")
-        plt.legend()
-        plt.title(f"Theta* Pathfinding using {map_type}")
-        plt.xlabel("X [m]")
-        plt.ylabel("Y [m]")
-        plt.grid(True)
-        plt.axis("equal")
-        plt.show()
+    if isReached:
+        map_instance.plot_map(title="Theta* Route Planner")
+        plt.plot(route_trajectory[:, 0], route_trajectory[:, 1], "-r", label="Theta* Path")
     else:
         print("No path found!")
 

@@ -84,13 +84,13 @@ def main(map_type="ComplexGridMap"):
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
 
-    informed_rrt_star = InformedRRTStar(start_pose, goal_pose, map_instance, show_eclipse=True)
-    rx, ry = informed_rrt_star.search_route(show_process=True)
+    route_planner = InformedRRTStar(start_pose, goal_pose, map_instance, show_eclipse=True)
+    isReached, total_distance, route_trajectory = route_planner.search_route(show_process=True)
 
-    if not rx and not ry:
+    if not isReached:
         print("Goal not reached. No path found.")
     else:
-        plt.plot(rx, ry, "-r", label="Planned Path")
+        plt.plot(route_trajectory[:, 0], route_trajectory[:, 1], "-r", label="Planned Path")
 
         plt.legend()
         plt.pause(0.001)

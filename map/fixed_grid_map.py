@@ -6,8 +6,8 @@ class FixedGridMap(GridMap):
     def __init__(self, lot_width=20, lot_height=20):
         super().__init__(lot_width=lot_width, lot_height=lot_height)
         self.create_outer_walls()
-        self.add_fixed_obstacles(1, 7, 5, 10)
-        self.add_fixed_obstacles(5, 2, 10, 8)
+        self.add_fixed_obstacles(3, 7, 10, 10)
+        self.add_fixed_obstacles(5, 5, 10, 15)
 
     def add_fixed_obstacles(self, min_x, min_y, max_x, max_y):
         # 장애물 좌표 추가

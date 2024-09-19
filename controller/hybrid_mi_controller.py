@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot as plt
 from scipy.stats import entropy
 
-from utils import calculate_angle, transform_arrays_with_angles
+from utils import calculate_angle, calculate_trajectory_distance, transform_trajectory_with_angles
 
 from map.parking_lot import ParkingLot
 from map.complex_grid_map import ComplexGridMap
@@ -43,10 +43,11 @@ def optimize_combined_path(state_mpc, state_pure_pursuit, mi):
 
     return np.array([combined_x, combined_y, combined_theta, state_mpc[3]])  # 속도는 MPC를 기준으로
 
-class HybridController(BaseController):
-    def __init__(self, mpc_controller, pure_pursuit_controller):
-        self.mpc_controller = mpc_controller
-        self.pure_pursuit_controller = pure_pursuit_controller
+class HybridMIController(BaseController):
+    def __init__(self, horizon, dt, wheelbase, map_instance):
+        super().__init__(dt, wheelbase, map_instance)
+        self.mpc_controller = MPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
+        self.pure_pursuit_controller = PurePursuitController(lookahead_distance=5.0, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
 
     def follow_trajectory(self, start_pose, ref_trajectory, goal_position, show_process=False):
         # 초기 상태 설정
@@ -63,9 +64,12 @@ class HybridController(BaseController):
             state_mpc = self.mpc_controller.optimize_control(current_state, ref_segment)
             next_state_mpc = self.mpc_controller.apply_control(current_state, state_mpc)
 
-            target_point = self.pure_pursuit_controller.find_target_point(current_state, ref_trajectory)
-            steering_angle_pure_pursuit = self.pure_pursuit_controller.compute_control(current_state, target_point)
+            target_state = self.pure_pursuit_controller.find_target_state(current_state, ref_trajectory)
+            steering_angle_pure_pursuit = self.pure_pursuit_controller.compute_control(current_state, target_state)
             next_state_pure_pursuit = self.pure_pursuit_controller.apply_control(current_state, steering_angle_pure_pursuit, velocity=0.5)
+
+            print(next_state_mpc)
+            print(next_state_pure_pursuit)
 
             # 현재 스텝에서 두 경로 간의 Mutual Information 계산
             mi = mutual_information(np.array([next_state_mpc]), np.array([next_state_pure_pursuit]))
@@ -81,7 +85,7 @@ class HybridController(BaseController):
                 plt.plot(current_state[0], current_state[1], "xr")
                 plt.pause(0.001)
 
-        total_distance = self.calculate_trajectory_distance(np.array(trajectory))
+        total_distance = calculate_trajectory_distance(trajectory)
 
         print("Trajectory following completed.")
         return True, total_distance, np.array(trajectory)
@@ -100,9 +104,9 @@ def main(map_type="ComplexGridMap"):
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
 
-    informed_rrt_star = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
+    route_planner = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
     try:
-        rx, ry, rx_opt, ry_opt = informed_rrt_star.search_route(show_process=False)
+        isReached, total_distance, route_trajectory, route_trajectory_opt = route_planner.search_route(show_process=False)
     except Exception as e:
         print(f"Error in route generation: {e}")
         return
@@ -111,7 +115,7 @@ def main(map_type="ComplexGridMap"):
         print("TRRT* was unable to generate a valid path.")
         return
 
-    ref_trajectory = transform_arrays_with_angles(rx_opt, ry_opt)
+    ref_trajectory = transform_trajectory_with_angles(route_trajectory_opt)
 
     mpc_controller = MPCController(horizon=10, dt=0.1, map_instance=map_instance, wheelbase=2.5)
     pure_pursuit_controller = PurePursuitController(lookahead_distance=5.0, dt=0.1, wheelbase=2.5, map_instance=map_instance)

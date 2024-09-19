@@ -9,6 +9,8 @@ https://github.com/AtsushiSakai/PythonRobotics/blob/master/PathPlanning/AStar/a_
 import math
 import matplotlib.pyplot as plt
 
+from utils import transform_trajectory, calculate_trajectory_distance
+
 from map.parking_lot import ParkingLot
 from map.complex_grid_map import ComplexGridMap
 
@@ -59,7 +61,11 @@ class HybridAStarRoutePlanner:
             if self.calculate_distance_to_end(current_node.pose) <= 1:
                 print("Find Goal")
                 self.goal_node = current_node
-                return self.process_route(closed_set)
+                
+                rx, ry = self.process_route(closed_set)
+                route_trajectory = transform_trajectory(rx, ry)
+                total_distance = calculate_trajectory_distance(route_trajectory)
+                return True, total_distance, route_trajectory
 
             # Remove the item from the open set
             del open_set[current_node_index]
@@ -91,7 +97,7 @@ class HybridAStarRoutePlanner:
                             open_set[next_node_index] = next_node
 
         print("Cannot find Route")
-        return [], []
+        return False, 0, []
 
     def process_route(self, closed_set):
         rx = [self.goal_node.pose.x]
@@ -170,8 +176,8 @@ def main(map_type="ComplexGridMap"):
     plt.plot(goal_pose.x, goal_pose.y, "xb")
 
     hybrid_a_star_route_planner = HybridAStarRoutePlanner(map_instance)
-    rx, ry = hybrid_a_star_route_planner.search_route(start_pose, goal_pose, True)
-    plt.plot(rx, ry, "-r")
+    isReached, total_distance, route_trajectory = hybrid_a_star_route_planner.search_route(start_pose, goal_pose, True)
+    plt.plot(route_trajectory[:, 0], route_trajectory[:, 1], "-r")
     plt.pause(0.001)
     plt.show()
 
