@@ -20,7 +20,7 @@ from controller.stanley_controller import StanleyController
 # 메인 함수
 def main():
     parser = argparse.ArgumentParser(description="Controller Speed Test with Informed TRRT* Route Planner.")
-    parser.add_argument('--map', type=str, default='parking_lot', choices=['parking_lot', 'fixed_grid', 'complex_grid'], help='Choose the map type.')
+    parser.add_argument('--map', type=str, default='complex_grid', choices=['parking_lot', 'fixed_grid', 'complex_grid'], help='Choose the map type.')
     args = parser.parse_args()
 
     # Map selection using dictionary
@@ -54,10 +54,10 @@ def main():
     wheelbase = 2.5  # Example wheelbase of the vehicle in meters
     goal_position = [goal_pose.x, goal_pose.y]
     algorithms = {
+        'pure_pursuit': lambda: PurePursuitController(lookahead_distance=5.0, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
         'mpc_basic': lambda: MPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
         'adaptive_mpc': lambda: AdaptiveMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
         'multi_purpose_mpc': lambda: MultiPurposeMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
-        'pure_pursuit': lambda: PurePursuitController(lookahead_distance=5.0, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
         'stanley': lambda: StanleyController(k=0.1, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
     }
 
@@ -78,9 +78,12 @@ def main():
                 plt.plot(start_pose.x, start_pose.y, "og")
                 plt.plot(goal_pose.x, goal_pose.y, "xb")
             start_time = time.time()
-            rx, ry, rx_opt, ry_opt = planner.search_route(show_process=False)
+            rx, ry, rx_opt, ry_opt = planner.search_route(show_process=show_process)
             end_time = time.time()
             planning_time = end_time - start_time
+            
+            plt.plot(rx, ry, "g--", label="Theta* Path")  # Green dashed line
+            plt.plot(rx_opt, ry_opt, "-r", label="Informed TRRT Path")  # Red solid line
 
             if len(rx_opt) == 0 or len(ry_opt) == 0:
                 continue
