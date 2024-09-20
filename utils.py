@@ -25,16 +25,16 @@ def transform_trajectory_with_angles(trajectory, num_points=50, velocity=1.0, la
 
     for i in range(n - 1):
         # Get segment start and end
-        x_start, y_start = trajectory[i]
-        x_end, y_end = trajectory[i + 1]
+        x_start, y_start = trajectory[i][:2]
+        x_end, y_end = trajectory[i + 1][:2]
         
         # Calculate angle for current segment
         theta_current = calculate_angle(x_start, y_start, x_end, y_end)
         
         # Calculate angle for the next segment
         if i < n - 2:
-            x_next_start, y_next_start = trajectory[i + 1]
-            x_next_end, y_next_end = trajectory[i + 2]
+            x_next_start, y_next_start = trajectory[i + 1][:2]
+            x_next_end, y_next_end = trajectory[i + 2][:2]
             theta_next = calculate_angle(x_next_start, y_next_start, x_next_end, y_next_end)
         else:
             # Use the same angle for the last segment if there's no next segment

@@ -40,32 +40,39 @@ class MPCController(BaseController):
 
     def optimize_control(self, current_state, ref_trajectory):
         best_control = None
+        best_predicted_states = None
         min_cost = float('inf')
 
-        for v_ref in np.linspace(-1, 1, 7):  # Increased resolution for finer control
-            for delta_ref in np.linspace(-np.pi/6, np.pi/6, 7):  # Adjusted steering angle range
+        for v_ref in np.linspace(-1, 1, 7):  # 속도 범위를 세밀하게 설정
+            for delta_ref in np.linspace(-np.pi/6, np.pi/6, 7):  # 조향 각도 범위 설정
                 predicted_states = []
                 state = current_state
                 for _ in range(self.horizon):
                     state = self.apply_control(state, (v_ref, delta_ref))
-                    predicted_states.append(state)
+                    predicted_states.append(list(state))
 
-                # Ensure that the predicted states and reference trajectory have matching lengths
+                # predicted states와 reference trajectory 길이를 맞춤
                 if len(predicted_states) > len(ref_trajectory):
                     predicted_states = predicted_states[:len(ref_trajectory)]
 
-                # Check if all predicted states are collision-free
+                # 충돌 여부를 확인
                 if all(self.is_collision_free(state, s) for s in predicted_states):
                     cost = self.compute_cost(predicted_states, ref_trajectory)
                     if cost < min_cost:
                         min_cost = cost
                         best_control = (v_ref, delta_ref)
+                        best_predicted_states = predicted_states
 
-        # If no control was found, default to a small forward motion
+        # best_control이 없을 때, 기본 움직임을 설정하고 최소한의 예측 상태 생성
         if best_control is None:
-            best_control = (0.1, 0.0)
+            best_control = (0.1, 0.0)  # 기본값: 천천히 직진
+            # best_predicted_states = []
+            # state = current_state
+            # for _ in range(self.horizon):
+            #     state = self.apply_control(state, best_control)
+            #     best_predicted_states.append(list(state))
 
-        return best_control
+        return best_control, best_predicted_states
 
     def follow_trajectory(self, start_pose, ref_trajectory, goal_position, show_process=False):
         # Initialize the state and trajectory
