@@ -46,5 +46,5 @@ if __name__ == "__main__":
     map_instance = ParkingLot(width=120, height=100)
     map_instance.plot_map(title="Parking Lot")
 
-    plt.savefig("results/map_parking_lot.png")
+    plt.savefig("results/map_parkinglot.png")
     plt.show()
