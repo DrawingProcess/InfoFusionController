@@ -65,9 +65,10 @@ def main():
 
     # 초기 경로 생성
     route_trajectorys, route_trajectory_opts = [], []
+    MAX_ITER = 5
     count = 0
 
-    while(True):
+    for count in range(MAX_ITER):
         if count >= 5:
             break
 
@@ -111,11 +112,7 @@ def main():
         count = 0
         total_time = 0
         total_dist = 0
-        is_reached = False
-        while(True):  # 10번 반복 실행
-            if count >= 5:
-                break
-
+        for count in range(MAX_ITER):
             plt.clf()
             if show_process:
                 map_instance.plot_map(title=f"{name} Controller [{count}]")
@@ -131,22 +128,28 @@ def main():
             end_time = time.time()
             control_time = end_time - start_time
 
-            if show_process:
-                plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label="Controller Path")
-                plt.savefig(f"results/test_controller/controller_{name}_{count}.png")
-
             if not is_reached:
                 fail_counts[name] += 1
             else:
                 total_time += control_time
                 total_dist += trajectory_distance
-            
+
+            if show_process:
+                plt.clf()
+                map_instance.plot_map(title=f"{name} Controller [{count}]")
+                plt.plot(start_pose.x, start_pose.y, "og")
+                plt.plot(goal_pose.x, goal_pose.y, "xb")
+                plt.plot(route_trajectorys[count][:, 0], route_trajectorys[count][:, 1], "g--", label="Theta* Path")  # Green dashed line
+                plt.plot(route_trajectory_opts[count][:, 0], route_trajectory_opts[count][:, 1], "-r", label="Informed TRRT Path")  # Red solid line
+
+                plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label="Controller Path")
+                plt.savefig(f"results/test_controller/controller_{name}_{count}.png")
             count += 1
 
-        if count - fail_counts[name] != 0:
-            performance_results[name] = total_time / (count - fail_counts[name])  # 평균 실행 시간 계산
-            distance_results[name] = total_dist / (count - fail_counts[name])
-            print(f"{name}: {performance_results[name]:.6f} s (평균)")
+        if MAX_ITER - fail_counts[name] != 0:
+            performance_results[name] = total_time / (MAX_ITER - fail_counts[name])  # 평균 실행 시간 계산
+            distance_results[name] = total_dist / (MAX_ITER - fail_counts[name])
+            print(f"{name}: {performance_results[name]:.6f} 초 (평균)")
             print(f"{name}: {distance_results[name]:.6f} m (평균)")
 
     # 성능 결과 정렬 및 출력
@@ -166,7 +169,7 @@ def main():
     ax1.barh(algorithm_names, fail_values, color='red')
     ax1.set_xlabel("Fail Count")
     ax1.set_ylabel("Algorithm")
-    ax1.set_title("Algorithm Pathfinding Failure Counts (5 Runs)")
+    ax1.set_title("Algorithm Pathfinding Failure Counts ({MAX_ITER} Runs)")
     ax1.grid(True)
 
     # Performance Results Plot
@@ -174,7 +177,7 @@ def main():
     times = [result[1] for result in sorted_performs]
     ax2.barh(algorithm_names, times, color='skyblue')
     ax2.set_xlabel("Average Execution Time (seconds)")
-    ax2.set_title("Algorithm Performance Comparison (10 Runs)")
+    ax2.set_title("Algorithm Performance Comparison ({MAX_ITER} Runs)")
     ax2.grid(True)
 
     # Performance Results Plot
@@ -182,13 +185,12 @@ def main():
     dists = [result[1] for result in sorted_dists]
     ax3.barh(algorithm_names, dists, color='purple')
     ax3.set_xlabel("Average Trajectory Distance (m)")
-    ax3.set_title("Algorithm Performance Comparison (10 Runs)")
+    ax3.set_title("Algorithm Performance Comparison ({MAX_ITER} Runs)")
     ax3.grid(True)
 
     # Adjust layout and show plot
     plt.tight_layout()  # Ensure there's enough space between the plots
     plt.savefig("results/test_route_planner/performance_route_planner.png")
-    plt.show()
 
 if __name__ == "__main__":
     main()
