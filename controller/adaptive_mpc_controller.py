@@ -1,14 +1,18 @@
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+import json
+import argparse
 
 from utils import calculate_angle, calculate_trajectory_distance, transform_trajectory_with_angles
 
 from map.parking_lot import ParkingLot
+from map.fixed_grid_map import FixedGridMap
 from map.random_grid_map import RandomGridMap
 
-from controller.mpc_controller import MPCController
 from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
+
+from controller.mpc_controller import MPCController
 
 class AdaptiveMPCController(MPCController):
     def __init__(self, horizon, dt, wheelbase, map_instance):
@@ -72,17 +76,42 @@ class AdaptiveMPCController(MPCController):
         return True, total_distance, np.array(trajectory)
 
 
-def main(map_type="RandomGridMap"):
-    # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
-    if map_type == "ParkingLot":
-        map_instance = ParkingLot(width=100, height=75)
-    else:  # Default to RandomGridMap
-        map_instance = RandomGridMap(width=100, height=75)
+def main():
+    parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")
+    parser.add_argument('--map', type=str, default='fixed_grid', choices=['parking_lot', 'fixed_grid', 'random_grid'], help='Choose the map type.')
+    parser.add_argument('--conf', help='Path to configuration JSON file', default=None)
+    args = parser.parse_args()
 
-    # 유효한 시작과 목표 좌표 설정
-    start_pose = map_instance.get_random_valid_start_position()
-    goal_pose = map_instance.get_random_valid_goal_position()
-    print(f"Start Adaptive MPC Controller (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
+    if args.conf:
+        # Read the JSON file and extract parameters
+        with open(args.conf, 'r') as f:
+            config = json.load(f)
+
+        start_pose = Pose(config['start_pose'][0], config['start_pose'][1], config['start_pose'][2])
+        goal_pose = Pose(config['goal_pose'][0], config['goal_pose'][1], config['goal_pose'][2])
+        width = config.get('width', 50)
+        height = config.get('height', 50)
+        obstacles = config.get('obstacles', [])
+    else:
+        # Use default parameters
+        width = 50
+        height = 50
+        start_pose = Pose(2, 2, 0)
+        goal_pose = Pose(width - 5, height - 5, 0)
+        obstacles = None  # Will trigger default obstacles in the class
+
+    # Map selection using dictionary
+    map_options = {
+        'parking_lot': ParkingLot,
+        'fixed_grid': FixedGridMap,
+        'random_grid': RandomGridMap
+    }
+    map_instance = map_options[args.map](width, height, obstacles)
+
+    if args.map == "random_grid":
+        start_pose = map_instance.get_random_valid_start_position()
+        goal_pose = map_instance.get_random_valid_goal_position()
+    print(f"Start planning (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
     # 맵과 장애물 및 시작/목표 지점을 표시
     map_instance.plot_map(title="Adaptive MPC Route Planner")
