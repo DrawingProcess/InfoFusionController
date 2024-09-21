@@ -1,0 +1,69 @@
+{
+    "start_pose": [20, 20, 0],
+    "goal_pose": [190, 190, 0],
+    "width": 200,
+    "height": 200,
+    "obstacles": [
+        {
+            "type": "rectangle",
+            "coordinates": [35, 15, 50, 25]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [25, 35, 45, 55]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [25, 75, 65, 105]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [25, 105, 45, 125]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [30, 150, 40, 170]
+        },
+        {
+            "type": "circle",
+            "parameters": [80, 50, 20]
+        },
+        {
+            "type": "circle",
+            "parameters": [70, 150, 10]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [95, 85, 130, 110]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [90, 170, 100, 180]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [100, 130, 110, 180]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [115, 55, 135, 75]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [110, 20, 150, 30]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [140, 30, 150, 50]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [140, 100, 170, 140]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [130, 160, 170, 180]
+        }
+    ]
+}
+  
