@@ -7,7 +7,7 @@ from map.grid_map import GridMap
 from route_planner.geometry import Pose
 
 class RandomGridMap(GridMap):
-    def __init__(self, width=82, height=63):
+    def __init__(self, width=82, height=63, obstacles=None):
         super().__init__(width=width, height=height)
         # 장애물 생성 (맵 크기에 비례하여 장애물 수 결정)
         self.create_random_obstacles()
@@ -59,5 +59,5 @@ if __name__ == "__main__":
     map_instance = RandomGridMap(width=100, height=80)
     map_instance.plot_map(title="Random Grid Map")
 
-    plt.savefig("results/map_random_grid_map.png")
+    plt.savefig("results/map_randomgrid.png")
     plt.show()

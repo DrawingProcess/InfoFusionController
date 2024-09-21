@@ -1,6 +1,6 @@
 import argparse
 import time
-import math
+import json
 import matplotlib.pyplot as plt
 
 from map.parking_lot import ParkingLot
@@ -20,7 +20,26 @@ from route_planner.informed_trrt_star_planner import InformedTRRTStar
 def main():
     parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")
     parser.add_argument('--map', type=str, default='fixed_grid', choices=['parking_lot', 'fixed_grid', 'random_grid'], help='Choose the map type.')
+    parser.add_argument('--conf', help='Path to configuration JSON file', default=None)
     args = parser.parse_args()
+
+    if args.conf:
+        # Read the JSON file and extract parameters
+        with open(args.conf, 'r') as f:
+            config = json.load(f)
+
+        start_pose = Pose(config['start_pose'][0], config['start_pose'][1], config['start_pose'][2])
+        goal_pose = Pose(config['goal_pose'][0], config['goal_pose'][1], config['goal_pose'][2])
+        width = config.get('width', 50)
+        height = config.get('height', 50)
+        obstacles = config.get('obstacles', [])
+    else:
+        # Use default parameters
+        width = 50
+        height = 50
+        start_pose = Pose(2, 2, 0)
+        goal_pose = Pose(width - 5, height - 5, 0)
+        obstacles = None  # Will trigger default obstacles in the class
 
     # Map selection using dictionary
     map_options = {
@@ -28,15 +47,9 @@ def main():
         'fixed_grid': FixedGridMap,
         'random_grid': RandomGridMap
     }
-    map_instance = map_options[args.map]()
+    map_instance = map_options[args.map](width, height, obstacles)
 
-    if args.map == "parking_lot":
-        start_pose = Pose(14.0, 4.0, math.radians(0))
-        goal_pose = Pose(50.0, 38.0, math.radians(90))
-    elif args.map == "fixed_grid":
-        start_pose = Pose(3, 5, math.radians(0))
-        goal_pose = Pose(15, 15, math.radians(0))
-    else:
+    if args.map == "random_grid":
         start_pose = map_instance.get_random_valid_start_position()
         goal_pose = map_instance.get_random_valid_goal_position()
     print(f"Start planning (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")

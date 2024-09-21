@@ -5,7 +5,7 @@ import math
 from route_planner.geometry import Pose
 
 class GridMap:
-    def __init__(self, width=82, height=63):
+    def __init__(self, width=82, height=63, obstacles=None):
         self.width = width
         self.height = height
         self.grid = [[0 for _ in range(self.width + 1)] for _ in range(self.height + 1)]
@@ -194,5 +194,5 @@ if __name__ == "__main__":
     map_instance = GridMap(width=100, height=80)
     map_instance.plot_map(title="Base Grid Map")
 
-    plt.savefig("results/map_grid_map.png")
+    plt.savefig("results/map_grid.png")
     plt.show()
