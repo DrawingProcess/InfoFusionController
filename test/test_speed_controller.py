@@ -6,7 +6,7 @@ from utils import transform_trajectory_with_angles
 
 from map.parking_lot import ParkingLot
 from map.fixed_grid_map import FixedGridMap
-from map.complex_grid_map import ComplexGridMap
+from map.random_grid_map import RandomGridMap
 
 from route_planner.geometry import Pose
 from route_planner.informed_trrt_star_planner import InformedTRRTStar
@@ -21,14 +21,14 @@ from controller.stanley_controller import StanleyController
 # 메인 함수
 def main():
     parser = argparse.ArgumentParser(description="Controller Speed Test with Informed TRRT* Route Planner.")
-    parser.add_argument('--map', type=str, default='fixed_grid', choices=['parking_lot', 'fixed_grid', 'complex_grid'], help='Choose the map type.')
+    parser.add_argument('--map', type=str, default='fixed_grid', choices=['parking_lot', 'fixed_grid', 'random_grid'], help='Choose the map type.')
     args = parser.parse_args()
 
     # Map selection using dictionary
     map_options = {
         'parking_lot': ParkingLot,
         'fixed_grid': FixedGridMap,
-        'complex_grid': ComplexGridMap
+        'random_grid': RandomGridMap
     }
     map_instance = map_options[args.map]()
 

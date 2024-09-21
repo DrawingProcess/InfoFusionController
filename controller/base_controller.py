@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from utils import calculate_angle, calculate_trajectory_distance, transform_trajectory_with_angles
 
 from map.parking_lot import ParkingLot
-from map.complex_grid_map import ComplexGridMap
+from map.random_grid_map import RandomGridMap
 from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
 
 class BaseController:
@@ -204,11 +204,11 @@ class BaseController:
         print("Trajectory following completed.")
         return is_reached, total_distance, np.array(trajectory)
 
-def main(map_type="ComplexGridMap"):
+def main(map_type="RandomGridMap"):
     if map_type == "ParkingLot":
-        map_instance = ParkingLot(lot_width=100, lot_height=75)
-    else:  # Default to ComplexGridMap
-        map_instance = ComplexGridMap(lot_width=100, lot_height=75)
+        map_instance = ParkingLot(width=100, height=75)
+    else:  # Default to RandomGridMap
+        map_instance = RandomGridMap(width=100, height=75)
 
     start_pose = map_instance.get_random_valid_start_position()
     goal_pose = map_instance.get_random_valid_goal_position()

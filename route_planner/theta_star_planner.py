@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from utils import transform_trajectory, calculate_trajectory_distance
 
 from map.parking_lot import ParkingLot
-from map.complex_grid_map import ComplexGridMap
+from map.random_grid_map import RandomGridMap
 from route_planner.geometry import Pose, Node
 
 class ThetaStar:
@@ -33,7 +33,7 @@ class ThetaStar:
         for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1), (-1, 1), (1, -1)]:
             x = node.x + dx
             y = node.y + dy
-            if 0 <= x < self.map_instance.lot_width and 0 <= y < self.map_instance.lot_height:
+            if 0 <= x < self.map_instance.width and 0 <= y < self.map_instance.height:
                 neighbor = Node(x, y, node.cost + math.hypot(dx, dy), None)
                 if self.map_instance.is_not_crossed_obstacle((node.x, node.y), (x, y)):
                     neighbors.append(neighbor)
@@ -108,12 +108,12 @@ class ThetaStar:
             lambda event: [exit(0) if event.key == "escape" else None],
         )
 
-def main(map_type="ComplexGridMap"):
+def main(map_type="RandomGridMap"):
     # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
     if map_type == "ParkingLot":
-        map_instance = ParkingLot(lot_width=100, lot_height=75)
-    else:  # Default to ComplexGridMap
-        map_instance = ComplexGridMap(lot_width=100, lot_height=75)
+        map_instance = ParkingLot(width=100, height=75)
+    else:  # Default to RandomGridMap
+        map_instance = RandomGridMap(width=100, height=75)
 
     # 유효한 시작과 목표 좌표 설정
     start_pose = map_instance.get_random_valid_start_position()
@@ -145,5 +145,5 @@ def main(map_type="ComplexGridMap"):
         print("No path found!")
 
 if __name__ == "__main__":
-    # 사용할 맵 클래스 선택: "ParkingLot" 또는 "ComplexGridMap"
+    # 사용할 맵 클래스 선택: "ParkingLot" 또는 "RandomGridMap"
     main()

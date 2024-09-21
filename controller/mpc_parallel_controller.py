@@ -6,7 +6,7 @@ import queue
 import time
 
 from map.parking_lot import ParkingLot
-from map.complex_grid_map import ComplexGridMap
+from map.random_grid_map import RandomGridMap
 from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
 from utils import calculate_angle, calculate_trajectory_distance, transform_trajectory_with_angles
 
@@ -83,14 +83,14 @@ def trrt_planning_thread(start_pose, goal_pose, map_instance, mpc_controller, pl
         time.sleep(5)
 
 
-def plot_mpc_path(plot_queue, obstacle_x, obstacle_y, start_pose, goal_pose, lot_width, lot_height):
+def plot_mpc_path(plot_queue, obstacle_x, obstacle_y, start_pose, goal_pose, width, height):
     plt.ion()  # Turn on interactive mode
     fig, ax = plt.subplots()
     ax.plot(obstacle_x, obstacle_y, ".k")
     ax.plot(start_pose.x, start_pose.y, "og")
     ax.plot(goal_pose.x, goal_pose.y, "xb")
-    ax.set_xlim(-1, lot_width + 1)
-    ax.set_ylim(-1, lot_height + 1)
+    ax.set_xlim(-1, width + 1)
+    ax.set_ylim(-1, height + 1)
     ax.set_title("Adaptive MPC Route Planner")
     ax.set_xlabel("X [m]")
     ax.set_ylabel("Y [m]")
@@ -130,12 +130,12 @@ def plot_mpc_path(plot_queue, obstacle_x, obstacle_y, start_pose, goal_pose, lot
             plt.pause(0.001)
 
 
-def main(map_type="ComplexGridMap"):
+def main(map_type="RandomGridMap"):
     # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
     if map_type == "ParkingLot":
-        map_instance = ParkingLot(lot_width=100, lot_height=75)
-    else:  # Default to ComplexGridMap
-        map_instance = ComplexGridMap(lot_width=100, lot_height=75)
+        map_instance = ParkingLot(width=100, height=75)
+    else:  # Default to RandomGridMap
+        map_instance = RandomGridMap(width=100, height=75)
 
     obstacle_x = [obstacle[0] for obstacle in map_instance.obstacles]
     obstacle_y = [obstacle[1] for obstacle in map_instance.obstacles]
@@ -172,7 +172,7 @@ def main(map_type="ComplexGridMap"):
     control_thread.start()
 
     # Start the plotting in the main thread
-    plot_mpc_path(plot_queue, obstacle_x, obstacle_y, start_pose, goal_pose, map_instance.lot_width, map_instance.lot_height)
+    plot_mpc_path(plot_queue, obstacle_x, obstacle_y, start_pose, goal_pose, map_instance.width, map_instance.height)
 
     # Wait for the control thread to finish (the planning and plot threads run indefinitely)
     control_thread.join()

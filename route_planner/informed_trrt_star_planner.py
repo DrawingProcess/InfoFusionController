@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 from utils import transform_trajectory, calculate_trajectory_distance
 
 from map.parking_lot import ParkingLot
-from map.complex_grid_map import ComplexGridMap
+from map.random_grid_map import RandomGridMap
 
 from route_planner.geometry import Pose, Node
 from route_planner.theta_star_planner import ThetaStar  # Assume Theta* is implemented here
@@ -69,8 +69,8 @@ class InformedTRRTStar(InformedRRTStar):
 
     def get_random_node(self, path_region=None):
         while True:
-            x = random.uniform(0, self.map_instance.lot_width)
-            y = random.uniform(0, self.map_instance.lot_height)
+            x = random.uniform(0, self.map_instance.width)
+            y = random.uniform(0, self.map_instance.height)
             node = Node(x, y, 0.0)
             if path_region is None or self.is_within_region(node, path_region):
                 return node
@@ -131,12 +131,12 @@ class InformedTRRTStar(InformedRRTStar):
         return np.array(smooth_trajectory)
 
 
-def main(map_type="ComplexGridMap"):
+def main(map_type="RandomGridMap"):
     # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
     if map_type == "ParkingLot":
-        map_instance = ParkingLot(lot_width=100, lot_height=75)
-    else:  # Default to ComplexGridMap
-        map_instance = ComplexGridMap(lot_width=100, lot_height=75)
+        map_instance = ParkingLot(width=100, height=75)
+    else:  # Default to RandomGridMap
+        map_instance = RandomGridMap(width=100, height=75)
 
     # 유효한 시작과 목표 좌표 설정
     start_pose = map_instance.get_random_valid_start_position()

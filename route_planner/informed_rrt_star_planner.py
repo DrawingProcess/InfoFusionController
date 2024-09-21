@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from map.parking_lot import ParkingLot
-from map.complex_grid_map import ComplexGridMap
+from map.random_grid_map import RandomGridMap
 
 from route_planner.geometry import Pose, Node
 from route_planner.rrt_star_planner import RRTStar
@@ -68,12 +68,12 @@ class InformedRRTStar(RRTStar):
         ellipse = plt.matplotlib.patches.Ellipse(xy=self.x_center, width=a * 2.0, height=b * 2.0, angle=angle, edgecolor='b', fc='None', lw=1, ls='--')
         plt.gca().add_patch(ellipse)
 
-def main(map_type="ComplexGridMap"):
+def main(map_type="RandomGridMap"):
     # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
     if map_type == "ParkingLot":
-        map_instance = ParkingLot(lot_width=100, lot_height=75)
-    else:  # Default to ComplexGridMap
-        map_instance = ComplexGridMap(lot_width=100, lot_height=75)
+        map_instance = ParkingLot(width=100, height=75)
+    else:  # Default to RandomGridMap
+        map_instance = RandomGridMap(width=100, height=75)
 
     # 유효한 시작과 목표 좌표 설정
     start_pose = map_instance.get_random_valid_start_position()

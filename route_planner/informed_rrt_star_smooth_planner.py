@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from utils import calculate_trajectory_distance, transform_trajectory
 
 from map.parking_lot import ParkingLot
-from map.complex_grid_map import ComplexGridMap
+from map.random_grid_map import RandomGridMap
 
 from route_planner.geometry import Pose, Node
 from route_planner.informed_rrt_star_planner import InformedRRTStar
@@ -43,12 +43,12 @@ class InformedRRTSmoothStar(InformedRRTStar):
 
         return np.array(smooth_trajectory)
 
-def main(map_type="ComplexGridMap"):
+def main(map_type="RandomGridMap"):
     # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
     if map_type == "ParkingLot":
-        map_instance = ParkingLot(lot_width=100, lot_height=75)
-    else:  # Default to ComplexGridMap
-        map_instance = ComplexGridMap(lot_width=100, lot_height=75)
+        map_instance = ParkingLot(width=100, height=75)
+    else:  # Default to RandomGridMap
+        map_instance = RandomGridMap(width=100, height=75)
 
     # 유효한 시작과 목표 좌표 설정
     start_pose = map_instance.get_random_valid_start_position()

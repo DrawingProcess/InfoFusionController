@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from utils import calculate_trajectory_distance, transform_trajectory
 
 from map.parking_lot import ParkingLot
-from map.complex_grid_map import ComplexGridMap
+from map.random_grid_map import RandomGridMap
 
 from route_planner.geometry import Pose, Node
 
@@ -21,11 +21,11 @@ class RRTStar:
         self.goal_reached = False
 
     def is_within_map_instance(self, node):
-        return 0 <= node.x <= self.map_instance.lot_width and 0 <= node.y <= self.map_instance.lot_height
+        return 0 <= node.x <= self.map_instance.width and 0 <= node.y <= self.map_instance.height
 
     def sample(self, path_region=None):
-        x = random.uniform(0, self.map_instance.lot_width)
-        y = random.uniform(0, self.map_instance.lot_height)
+        x = random.uniform(0, self.map_instance.width)
+        y = random.uniform(0, self.map_instance.height)
         return Node(x, y, 0.0)
 
     def get_nearest_node_index(self, node):
@@ -146,12 +146,12 @@ class RRTStar:
         if len(self.nodes) % 10 == 0:
             plt.pause(0.001)
 
-def main(map_type="ComplexGridMap"):
+def main(map_type="RandomGridMap"):
     # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
     if map_type == "ParkingLot":
-        map_instance = ParkingLot(lot_width=100, lot_height=75)
-    else:  # Default to ComplexGridMap
-        map_instance = ComplexGridMap(lot_width=100, lot_height=75)
+        map_instance = ParkingLot(width=100, height=75)
+    else:  # Default to RandomGridMap
+        map_instance = RandomGridMap(width=100, height=75)
 
     # 유효한 시작과 목표 좌표 설정
     start_pose = map_instance.get_random_valid_start_position()

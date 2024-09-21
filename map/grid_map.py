@@ -5,10 +5,10 @@ import math
 from route_planner.geometry import Pose
 
 class GridMap:
-    def __init__(self, lot_width=82, lot_height=63):
-        self.lot_width = lot_width
-        self.lot_height = lot_height
-        self.grid = [[0 for _ in range(self.lot_width)] for _ in range(self.lot_height)]
+    def __init__(self, width=82, height=63):
+        self.width = width
+        self.height = height
+        self.grid = [[0 for _ in range(self.width + 1)] for _ in range(self.height + 1)]
 
         self.obstacles = []
         self.obstacle_lines = []
@@ -19,21 +19,21 @@ class GridMap:
 
     def create_outer_walls(self):
         # 주차장의 외벽을 생성하는 함수
-        for x in range(self.lot_width):
+        for x in range(self.width):
             self.obstacles.append((x, 0))  # 아래쪽 외벽
-            self.obstacles.append((x, self.lot_height - 1))  # 위쪽 외벽
-        for y in range(1, self.lot_height - 1):
+            self.obstacles.append((x, self.height))  # 위쪽 외벽
+        for y in range(1, self.height):
             self.obstacles.append((0, y))  # 왼쪽 외벽
-            self.obstacles.append((self.lot_width - 1, y))  # 오른쪽 외벽
+            self.obstacles.append((self.width, y))  # 오른쪽 외벽
         self.obstacle_lines.extend([
-            [(0, 0), (0, self.lot_height - 1)],
-            [(0, 0), (self.lot_width - 1, 0)],
-            [(self.lot_width - 1, 0), (self.lot_width - 1, self.lot_height - 1)],
-            [(0, self.lot_height - 1), (self.lot_width - 1, self.lot_height - 1)],
+            [(0, 0), (0, self.height)],
+            [(0, 0), (self.width, 0)],
+            [(self.width, 0), (self.width, self.height)],
+            [(0, self.height), (self.width, self.height)],
         ])
 
     def get_grid_index(self, x, y):
-        return x + y * self.lot_width
+        return x + y * self.width
     
     def get_circle_obstacles(self):
         # 원형 장애물들의 (중심 좌표, 반지름)을 반환
@@ -44,26 +44,26 @@ class GridMap:
 
     def is_valid_position(self, x, y):
         # 주어진 좌표가 장애물이 아니고 맵 범위 내에 있는지 확인
-        return 0 <= x < self.lot_width and 0 <= y < self.lot_height and not self.is_obstacle(x, y)
+        return 0 <= x < self.width and 0 <= y < self.height and not self.is_obstacle(x, y)
 
     def get_random_valid_position(self):
         while True:
-            x = random.randint(0, self.lot_width - 1)
-            y = random.randint(0, self.lot_height - 1)
+            x = random.randint(0, self.width)
+            y = random.randint(0, self.height)
             if self.is_valid_position(x, y):
                 return Pose(x, y, math.radians(0))
             
     def get_random_valid_start_position(self):
         while True:
-            x = random.randint(0, self.lot_width // 4)
-            y = random.randint(0, self.lot_height // 4)
+            x = random.randint(0, self.width // 4)
+            y = random.randint(0, self.height // 4)
             if self.is_valid_position(x, y):
                 return Pose(x, y, math.radians(0))
             
     def get_random_valid_goal_position(self):
         while True:
-            x = random.randint(self.lot_width * 3 // 4, self.lot_width - 1)
-            y = random.randint(self.lot_height * 3 // 4, self.lot_height - 1)
+            x = random.randint(self.width * 3 // 4, self.width)
+            y = random.randint(self.height * 3 // 4, self.height)
             if self.is_valid_position(x, y):
                 return Pose(x, y, math.radians(90))
 
@@ -78,21 +78,22 @@ class GridMap:
         )
         return (
             current_node not in set(self.obstacles)
-            and 0 < current_node[0] < self.lot_width
-            and 0 < current_node[1] < self.lot_height
+            and 0 < current_node[0] < self.width
+            and 0 < current_node[1] < self.height
             and not (is_cross_line or is_cross_circle)
         )
 
+    # intersection check between rectangle obstacle and planning line
     def intersect(self, line1, line2):
         A = line1[0]
         B = line1[1]
         C = line2[0]
         D = line2[1]
         return self.ccw(A, C, D) != self.ccw(B, C, D) and self.ccw(A, B, C) != self.ccw(A, B, D)
-
     def ccw(self, A, B, C):
         return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])
 
+    # intersection check between circle obstacle and planning line
     def intersect_circle(self, center_x, center_y, radius, node1, node2):
         cx, cy = center_x, center_y
         px, py = node1
@@ -125,22 +126,26 @@ class GridMap:
     def plot_map(self, title, path=None):
         obstacle_x = [x for x, y in self.obstacles]
         obstacle_y = [y for x, y in self.obstacles]
-        plt.plot(obstacle_x, obstacle_y, ".k")  # 장애물은 검은색 사각형으로 표시
-        # plt.plot(obstacle_x, obstacle_y, "sk")  # 장애물은 검은색 사각형으로 표시
+        plt.plot(obstacle_x, obstacle_y, ".k")  # 장애물은 검은색 점으로 표시
 
-        # Plot the obstacle lines
+        # 사각형 장애물의 경계선 표시
         for line in self.obstacle_lines:
             x_values = [line[0][0], line[1][0]]
             y_values = [line[0][1], line[1][1]]
             plt.plot(x_values, y_values, "k-")  # 장애물 라인은 검은 실선으로 표시
 
+        # 원형 장애물 표시
+        for center_x, center_y, radius in self.circular_obstacles:
+            circle = plt.Circle((center_x, center_y), radius, color='black', fill=False)
+            plt.gca().add_patch(circle)
+
         if path:
             path_x = [x for x, y in path]
             path_y = [y for x, y in path]
             plt.plot(path_x, path_y, "-or")  # 경로는 빨간색 원으로 연결된 선으로 표시
-        
-        plt.xlim(-1, self.lot_width + 1)
-        plt.ylim(-1, self.lot_height + 1)
+
+        plt.xlim(-1, self.width + 1)
+        plt.ylim(-1, self.height + 1)
         plt.title(title)
         plt.xlabel("X [m]")
         plt.ylabel("Y [m]")
@@ -186,7 +191,7 @@ class GridMap:
 
 if __name__ == "__main__":
     # 맵 크기를 지정하여 GridMap 생성 (예: 100x75)
-    map_instance = GridMap(lot_width=100, lot_height=80)
+    map_instance = GridMap(width=100, height=80)
     map_instance.plot_map(title="Base Grid Map")
 
     plt.savefig("results/map_grid_map.png")

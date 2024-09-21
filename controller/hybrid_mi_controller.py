@@ -6,7 +6,7 @@ from scipy.stats import entropy
 from utils import calculate_angle, calculate_trajectory_distance, transform_trajectory_with_angles
 
 from map.parking_lot import ParkingLot
-from map.complex_grid_map import ComplexGridMap
+from map.random_grid_map import RandomGridMap
 
 from controller.base_controller import BaseController
 from controller.adaptive_mpc_controller import AdaptiveMPCController
@@ -103,11 +103,11 @@ class HybridMIController(BaseController):
         print("Trajectory following completed.")
         return True, total_distance, np.array(trajectory)
 
-def main(map_type="ComplexGridMap"):
+def main(map_type="RandomGridMap"):
     if map_type == "ParkingLot":
-        map_instance = ParkingLot(lot_width=20, lot_height=20)
+        map_instance = ParkingLot(width=20, height=20)
     else:
-        map_instance = ComplexGridMap(lot_width=20, lot_height=20)
+        map_instance = RandomGridMap(width=20, height=20)
 
     start_pose = map_instance.get_random_valid_start_position()
     goal_pose = map_instance.get_random_valid_goal_position()
