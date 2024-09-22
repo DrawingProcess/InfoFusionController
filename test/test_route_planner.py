@@ -62,11 +62,11 @@ def main():
     algorithms = {
         "A*": lambda: AStarRoutePlanner(start_pose, goal_pose, map_instance).search_route(show_process),
         "Theta*": lambda: ThetaStar(start_pose, goal_pose, map_instance).search_route(show_process),
-        "Hybrid A*": lambda: HybridAStarRoutePlanner(start_pose, goal_pose, map_instance).search_route(show_process),
+        "HybridA*": lambda: HybridAStarRoutePlanner(start_pose, goal_pose, map_instance).search_route(show_process),
         "RRT*": lambda: RRTStar(start_pose, goal_pose, map_instance).search_route(show_process),
-        "Informed RRT*": lambda: InformedRRTStar(start_pose, goal_pose, map_instance, show_eclipse=show_process).search_route(show_process=show_process),
-        "Informed RRT*(smoothing)": lambda: InformedRRTSmoothStar(start_pose, goal_pose, map_instance, show_eclipse=show_process).search_route(show_process=show_process),
-        "Informed TRRT*": lambda: InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=show_process).search_route(show_process=show_process),
+        "InformedRRT*": lambda: InformedRRTStar(start_pose, goal_pose, map_instance, show_eclipse=show_process).search_route(show_process=show_process),
+        "InformedSmoothingRRT*": lambda: InformedRRTSmoothStar(start_pose, goal_pose, map_instance, show_eclipse=show_process).search_route(show_process=show_process),
+        "InformedTRRT*": lambda: InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=show_process).search_route(show_process=show_process),
     }
 
     # 각 알고리즘의 성능 측정 및 실패 여부 확인

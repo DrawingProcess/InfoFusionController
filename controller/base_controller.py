@@ -172,6 +172,7 @@ class BaseController:
 
                 # Plot the new prediction lines
                 predicted_trajectory = self.predict_trajectory(current_state, target_state)
+                print(f"predicted_trajectory: {predicted_trajectory}")
                 predicted_lines.append(plt.plot(predicted_trajectory[:, 0], predicted_trajectory[:, 1], "b-", label="Predicted Path")[0])
                 colors = ["g--", "r--"]
                 # labels = ["Left Avoid Path", "Right Avoid Path"]

@@ -189,7 +189,7 @@ def main():
 
     # Adjust layout and show plot
     plt.tight_layout()  # Ensure there's enough space between the plots
-    plt.savefig("results/test_route_planner/performance_route_planner.png")
+    plt.savefig("results/test_controller/performance_controller.png")
 
 if __name__ == "__main__":
     main()
