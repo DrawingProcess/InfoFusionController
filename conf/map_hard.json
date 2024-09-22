@@ -34,7 +34,7 @@
         },
         {
             "type": "rectangle",
-            "coordinates": [20, 170, 70, 230]
+            "coordinates": [20, 170, 60, 230]
         },
         {
             "type": "rectangle",
@@ -58,11 +58,11 @@
         },
         {
             "type": "circle",
-            "coordinates": [80, 250, 20]
+            "parameters": [80, 250, 15]
         },
         {
             "type": "rectangle",
-            "coordinates": [75, 275, 150, 300]
+            "coordinates": [75, 275, 140, 300]
         },
         {
             "type": "rectangle",
@@ -74,11 +74,11 @@
         },
         {
             "type": "circle",
-            "coordinates": [130, 120, 15]
+            "parameters": [130, 120, 10]
         },
         {
             "type": "rectangle",
-            "coordinates": [100, 255, 115, 200]
+            "coordinates": [100, 150, 115, 200]
         },
         {
             "type": "rectangle",
@@ -86,11 +86,11 @@
         },
         {
             "type": "rectangle",
-            "coordinates": [125, 130, 190, 175]
+            "coordinates": [125, 140, 190, 175]
         },
         {
             "type": "rectangle",
-            "coordinates": [190, 165, 220, 175]
+            "coordinates": [190, 165, 210, 175]
         },
         {
             "type": "rectangle",
@@ -98,7 +98,7 @@
         },
         {
             "type": "rectangle",
-            "coordinates": [125, 225, 150, 250]
+            "coordinates": [125, 225, 145, 250]
         },
         {
             "type": "rectangle",
@@ -118,15 +118,11 @@
         },
         {
             "type": "circle",
-            "coordinates": [200, 115, 15]
+            "parameters": [200, 115, 15]
         },
         {
             "type": "rectangle",
             "coordinates": [200, 30, 260, 60]
-        },
-        {
-            "type": "rectangle",
-            "coordinates": [230, 80, 270, 175]
         },
         {
             "type": "rectangle",
@@ -142,7 +138,7 @@
         },
         {
             "type": "rectangle",
-            "coordinates": [180, 280, 230, 320]
+            "coordinates": [180, 285, 230, 320]
         },
         {
             "type": "rectangle",
@@ -154,7 +150,7 @@
         },
         {
             "type": "circle",
-            "coordinates": [280, 70, 15]
+            "parameters": [280, 70, 10]
         },
         {
             "type": "rectangle",
@@ -166,7 +162,7 @@
         },
         {
             "type": "rectangle",
-            "coordinates": [225, 90, 270, 175]
+            "coordinates": [225, 90, 260, 175]
         },
         {
             "type": "rectangle",
@@ -174,7 +170,7 @@
         },
         {
             "type": "rectangle",
-            "coordinates": [275, 185, 315, 225]
+            "coordinates": [285, 185, 315, 225]
         },
         {
             "type": "rectangle",
@@ -186,7 +182,7 @@
         },
         {
             "type": "circle",
-            "coordinates": [320, 320, 10]
+            "parameters": [320, 320, 10]
         },
         {
             "type": "rectangle",
@@ -206,11 +202,7 @@
         },
         {
             "type": "rectangle",
-            "coordinates": [330, 330, 355, 355]
-        },
-        {
-            "type": "rectangle",
-            "coordinates": [275, 370, 325, 380]
+            "coordinates": [335, 335, 355, 355]
         }
     ]
 }

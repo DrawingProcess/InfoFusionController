@@ -167,7 +167,7 @@ def main():
     plt.plot(goal_pose.x, goal_pose.y, "xb")
 
     a_star = AStarRoutePlanner(start_pose, goal_pose, map_instance)
-    isReached, total_distance, route_trajectory = a_star.search_route(False)
+    isReached, total_distance, route_trajectory = a_star.search_route(True)
 
     plt.plot(route_trajectory[:, 0], route_trajectory[:, 1], "-r")
     plt.pause(0.001)

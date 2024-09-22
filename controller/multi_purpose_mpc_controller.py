@@ -75,7 +75,7 @@ class MultiPurposeMPCController(MPCController):
         # 경로를 따르며 목표 지점에 도달
         for i in range(len(ref_trajectory) - self.horizon):
             ref_segment = ref_trajectory[i:i + self.horizon]
-            control_input = self.optimize_control(current_state, ref_segment)
+            control_input, predicted_states = self.optimize_control(current_state, ref_segment)
             next_state = self.apply_control(current_state, control_input)
 
             if not self.is_collision_free(current_state, next_state):

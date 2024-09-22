@@ -21,6 +21,7 @@ def main():
     parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")
     parser.add_argument('--map', type=str, default='fixed_grid', choices=['parking_lot', 'fixed_grid', 'random_grid'], help='Choose the map type.')
     parser.add_argument('--conf', help='Path to configuration JSON file', default=None)
+    parser.add_argument('--show_process', action='store_true', help='Show the process of the route planner')
     args = parser.parse_args()
 
     if args.conf:
@@ -55,7 +56,7 @@ def main():
     print(f"Start planning (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
     # show_process 변수로 show_process와 show_eclipse 제어
-    show_process = True
+    show_process = args.show_process
 
     # 성능 테스트를 위한 알고리즘 함수들
     algorithms = {
@@ -78,7 +79,7 @@ def main():
         count = 0
         total_time = 0.0
         total_dist = 0.0
-        for count in range(MAX_ITER):
+        while (count < MAX_ITER):
             plt.clf()  # 각 알고리즘 실행 전 플롯 초기화
             if show_process:
                 map_instance.plot_map(title=f"{name} Route Planner")
@@ -96,15 +97,17 @@ def main():
                 total_time += time_taken
                 total_dist += result[1]
 
-            if result[0] and show_process:
+            if result[0]:
                 plt.clf()  # 각 알고리즘 실행 전 플롯 초기화
                 map_instance.plot_map(title=f"{name} Route Planner")
                 plt.plot(start_pose.x, start_pose.y, "og")
                 plt.plot(goal_pose.x, goal_pose.y, "xb")
 
-                plt.plot(result[2][:, 0], result[2][:, 1], "g--", label="Route Planning Path")  # Green dashed line
-                if len(result) == 4:
-                    plt.plot(result[3][:, 0], result[3][:, 1], "-r", label="Optimized Path")  # Red solid line
+                if len(result) == 3:
+                    plt.plot(result[2][:, 0], result[2][:, 1], "-r", label=name)  # Green dashed line
+                else: # len(result) == 4:
+                    plt.plot(result[3][:, 0], result[3][:, 1], "-r", label=name)  # Red solid line
+                plt.legend(loc="upper left")
                 plt.savefig(f"results/test_route_planner/route_{name}_{count}.png")
             count += 1
     

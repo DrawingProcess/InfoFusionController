@@ -44,7 +44,7 @@ class AdaptiveMPCController(MPCController):
 
             ref_segment = ref_trajectory[i:i + self.horizon]
             self.update_horizon(current_state, ref_segment)
-            control_input = self.optimize_control(current_state, ref_segment)
+            control_input, predicted_states = self.optimize_control(current_state, ref_segment)
             next_state = self.apply_control(current_state, control_input)
 
             adjusted_states = self.avoid_obstacle(current_state, next_state)

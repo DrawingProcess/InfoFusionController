@@ -36,7 +36,7 @@ class MPCParallelController(MPCController):
                     self.current_trajectory = None  # Reset after applying the update
 
             ref_segment = ref_trajectory[i:i + self.horizon]
-            control_input = self.optimize_control(current_state, ref_segment)
+            control_input, predicted_states = self.optimize_control(current_state, ref_segment)
             next_state = self.apply_control(current_state, control_input)
 
             if not self.is_collision_free(current_state, next_state):

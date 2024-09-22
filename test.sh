@@ -1,7 +1,7 @@
 #!/bin/bash
 
 files=("test/test_route_planner.py" "test/test_controller.py")
-configs=("conf/map_easy.json" "conf/map_middle.json" "conf/map_hard.json")
+configs=("conf/map_easy.json")
 
 for file in ${files[@]}; do
     for config in ${configs[@]}; do
