@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from map.parking_lot import ParkingLot
 from map.fixed_grid_map import FixedGridMap
-from map.complex_grid_map import ComplexGridMap
+from map.random_grid_map import RandomGridMap
 
 from route_planner.geometry import Pose
 from route_planner.a_star_route_planner import AStarRoutePlanner
@@ -26,7 +26,7 @@ from utils import calculate_angle, transform_trajectory_with_angles
 
 def main():
     parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")
-    parser.add_argument('--map', type=str, default='complex_grid', choices=['parking_lot', 'fixed_grid', 'complex_grid'], help='Choose the map type.')
+    parser.add_argument('--map', type=str, default='random_grid', choices=['parking_lot', 'fixed_grid', 'random_grid'], help='Choose the map type.')
     parser.add_argument('--route_planner', type=str, default='informed_trrt_star', choices=[
         'a_star', 'hybrid_a_star', 'theta_star', 'rrt_star', 'informed_rrt_star', 'informed_rrt_smooth_star', 'informed_trrt_star'
     ], help='Choose the route planner.')
@@ -37,7 +37,7 @@ def main():
     map_options = {
         'parking_lot': ParkingLot,
         'fixed_grid': FixedGridMap,
-        'complex_grid': ComplexGridMap
+        'random_grid': RandomGridMap
     }
     map_instance = map_options[args.map]()
 

@@ -1,14 +1,18 @@
 import numpy as np
-import math
 import matplotlib.pyplot as plt
 import threading
 import queue
 import time
+import json
+import argparse
+
+from utils import calculate_angle, calculate_trajectory_distance, transform_trajectory_with_angles
 
 from map.parking_lot import ParkingLot
-from map.complex_grid_map import ComplexGridMap
+from map.fixed_grid_map import FixedGridMap
+from map.random_grid_map import RandomGridMap
+
 from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
-from utils import calculate_angle, calculate_trajectory_distance, transform_trajectory_with_angles
 
 from controller.mpc_controller import MPCController
 
@@ -32,7 +36,7 @@ class MPCParallelController(MPCController):
                     self.current_trajectory = None  # Reset after applying the update
 
             ref_segment = ref_trajectory[i:i + self.horizon]
-            control_input = self.optimize_control(current_state, ref_segment)
+            control_input, predicted_states = self.optimize_control(current_state, ref_segment)
             next_state = self.apply_control(current_state, control_input)
 
             if not self.is_collision_free(current_state, next_state):
@@ -83,14 +87,14 @@ def trrt_planning_thread(start_pose, goal_pose, map_instance, mpc_controller, pl
         time.sleep(5)
 
 
-def plot_mpc_path(plot_queue, obstacle_x, obstacle_y, start_pose, goal_pose, lot_width, lot_height):
+def plot_mpc_path(plot_queue, obstacle_x, obstacle_y, start_pose, goal_pose, width, height):
     plt.ion()  # Turn on interactive mode
     fig, ax = plt.subplots()
     ax.plot(obstacle_x, obstacle_y, ".k")
     ax.plot(start_pose.x, start_pose.y, "og")
     ax.plot(goal_pose.x, goal_pose.y, "xb")
-    ax.set_xlim(-1, lot_width + 1)
-    ax.set_ylim(-1, lot_height + 1)
+    ax.set_xlim(-1, width + 1)
+    ax.set_ylim(-1, height + 1)
     ax.set_title("Adaptive MPC Route Planner")
     ax.set_xlabel("X [m]")
     ax.set_ylabel("Y [m]")
@@ -130,20 +134,45 @@ def plot_mpc_path(plot_queue, obstacle_x, obstacle_y, start_pose, goal_pose, lot
             plt.pause(0.001)
 
 
-def main(map_type="ComplexGridMap"):
-    # 사용자가 선택한 맵 클래스에 따라 인스턴스 생성
-    if map_type == "ParkingLot":
-        map_instance = ParkingLot(lot_width=100, lot_height=75)
-    else:  # Default to ComplexGridMap
-        map_instance = ComplexGridMap(lot_width=100, lot_height=75)
+def main():
+    parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")
+    parser.add_argument('--map', type=str, default='fixed_grid', choices=['parking_lot', 'fixed_grid', 'random_grid'], help='Choose the map type.')
+    parser.add_argument('--conf', help='Path to configuration JSON file', default=None)
+    args = parser.parse_args()
+
+    if args.conf:
+        # Read the JSON file and extract parameters
+        with open(args.conf, 'r') as f:
+            config = json.load(f)
+
+        start_pose = Pose(config['start_pose'][0], config['start_pose'][1], config['start_pose'][2])
+        goal_pose = Pose(config['goal_pose'][0], config['goal_pose'][1], config['goal_pose'][2])
+        width = config.get('width', 50)
+        height = config.get('height', 50)
+        obstacles = config.get('obstacles', [])
+    else:
+        # Use default parameters
+        width = 50
+        height = 50
+        start_pose = Pose(2, 2, 0)
+        goal_pose = Pose(width - 5, height - 5, 0)
+        obstacles = None  # Will trigger default obstacles in the class
+
+    # Map selection using dictionary
+    map_options = {
+        'parking_lot': ParkingLot,
+        'fixed_grid': FixedGridMap,
+        'random_grid': RandomGridMap
+    }
+    map_instance = map_options[args.map](width, height, obstacles)
+
+    if args.map == "random_grid":
+        start_pose = map_instance.get_random_valid_start_position()
+        goal_pose = map_instance.get_random_valid_goal_position()
+    print(f"Start planning (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
     obstacle_x = [obstacle[0] for obstacle in map_instance.obstacles]
     obstacle_y = [obstacle[1] for obstacle in map_instance.obstacles]
-
-    # 유효한 시작과 목표 좌표 설정
-    start_pose = map_instance.get_random_valid_start_position()
-    goal_pose = map_instance.get_random_valid_goal_position()
-    print(f"Start Adaptive MPC Controller (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
     # 초기 경로 생성
     route_planner = InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=False)
@@ -172,7 +201,7 @@ def main(map_type="ComplexGridMap"):
     control_thread.start()
 
     # Start the plotting in the main thread
-    plot_mpc_path(plot_queue, obstacle_x, obstacle_y, start_pose, goal_pose, map_instance.lot_width, map_instance.lot_height)
+    plot_mpc_path(plot_queue, obstacle_x, obstacle_y, start_pose, goal_pose, map_instance.width, map_instance.height)
 
     # Wait for the control thread to finish (the planning and plot threads run indefinitely)
     control_thread.join()

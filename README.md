@@ -17,13 +17,13 @@ ADLAB-PLANNING
 |       stanley_controller.py                   # control: stanley controller
 |
 +---map
-|       complex_grid_map.py                     # map: random obstacle grid map
+|       random_grid_map.py                     # map: random obstacle grid map
 |       fixed_grid_map.py                       # map: fixed obstacle grid map
 |       grid_map.py                             # map: base grid map
 |       parking_lot.py                          # map: parking lot grid map
 |
 +---results
-|       map_complex_grid_map.png                # results: random obstacle grid map
+|       map_random_grid_map.png                # results: random obstacle grid map
 |       map_fixed_grid_map.png                  # results: fixed obstacle grid map
 |       map_grid_map.png                        # results: base grid map
 |       map_parking_lot.png                     # results: parking lot grid map

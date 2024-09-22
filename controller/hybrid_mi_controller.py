@@ -1,12 +1,15 @@
 import numpy as np
-import math
 import matplotlib.pyplot as plt
 from scipy.stats import entropy
+import json
+import argparse
+
 
 from utils import calculate_angle, calculate_trajectory_distance, transform_trajectory_with_angles
 
 from map.parking_lot import ParkingLot
-from map.complex_grid_map import ComplexGridMap
+from map.fixed_grid_map import FixedGridMap
+from map.random_grid_map import RandomGridMap
 
 from controller.base_controller import BaseController
 from controller.adaptive_mpc_controller import AdaptiveMPCController
@@ -14,35 +17,57 @@ from controller.pure_pursuit_controller import PurePursuitController
 
 from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
 
-def mutual_information(route1, route2):
-    """두 경로 간의 상호 정보를 계산"""
-    hist1, _ = np.histogram(route1, bins=20, density=True)
-    hist2, _ = np.histogram(route2, bins=20, density=True)
-    entropy1 = entropy(hist1)
-    entropy2 = entropy(hist2)
-    joint_hist, _, _ = np.histogram2d(route1[:, 0], route2[:, 0], bins=20, density=True)
-    joint_entropy = entropy(joint_hist.flatten())
-    mi = entropy1 + entropy2 - joint_entropy
-    nmi = mi / np.sqrt(entropy1 * entropy2) # normalized mutual information
-    return nmi
+def mutual_information(state1, state2):
+    """Calculate Mutual Information between two states."""
+    mi_list = []
+    
+    for i in range(3):  # [x, y, theta]
+        # Compute histograms with density=False
+        hist1, _ = np.histogram(state1[:, i], bins=5, density=False)
+        hist2, _ = np.histogram(state2[:, i], bins=5, density=False)
+        
+        # Convert to float and add epsilon to avoid zeros
+        hist1 = hist1.astype(float) + 1e-12
+        hist2 = hist2.astype(float) + 1e-12
+        
+        # Normalize histograms
+        hist1 /= np.sum(hist1)
+        hist2 /= np.sum(hist2)
+        # print(f"State {i} Histograms: {hist1}, {hist2}")
+        
+        # Calculate entropy
+        entropy1 = entropy(hist1)
+        entropy2 = entropy(hist2)
+        # print(f"State {i} Entropy: {entropy1}, {entropy2}")
+        
+        # Compute joint histogram and normalize
+        joint_hist, _, _ = np.histogram2d(state1[:, i], state2[:, i], bins=5, density=False)
+        joint_hist = joint_hist.astype(float) + 1e-12
+        joint_hist /= np.sum(joint_hist)
+        joint_entropy = entropy(joint_hist.flatten())
+        # print(f"Joint Entropy: {joint_entropy}")
+        
+        # Calculate Mutual Information
+        mi = entropy1 + entropy2 - joint_entropy
+        mi_list.append(mi)
+    
+    return np.array(mi_list)
 
-def optimize_combined_path(state_mpc, state_pure_pursuit, mi):
-    """현재 스텝에서 두 경로를 상호 정보에 따라 결합하여 최적 경로 상태 생성"""
-    if mi > 0.5:  # 상호 정보가 낮을 때 하나의 경로를 더 선호
-        weight1 = 0.5
-        weight2 = 0.5
-    elif mi > 0.2:
-        weight1 = 0.8
-        weight2 = 0.2
-    elif mi < 0.2:
-        weight1 = 1
-        weight2 = 0
-
-    combined_x = weight1 * state_mpc[0] + weight2 * state_pure_pursuit[0]
-    combined_y = weight1 * state_mpc[1] + weight2 * state_pure_pursuit[1]
-    combined_theta = weight1 * state_mpc[2] + weight2 * state_pure_pursuit[2]
-
-    return np.array([combined_x, combined_y, combined_theta, state_mpc[3]])  # 속도는 MPC를 기준으로
+# 두 알고리즘의 상태를 결합하는 함수
+def combine_states(state1, state2, mi):
+    """Mutual Information 기반으로 상태를 결합"""
+    combined_state = np.zeros_like(state1)
+    print(f"State 1: {state1}, State 2: {state2}")
+    
+    # Mutual Information을 바탕으로 각 상태에 가중치를 부여하여 결합
+    for i in range(3):  # [x, y, theta, velocity]
+        weight2 = mi[i] / (mi[i] + 1)  # Mutual Information 비율에 따른 가중치
+        weight1 = 1 - weight2
+        print(f"State {i} MI: {mi[i]}, Weights: {weight1}, {weight2}")
+        combined_state[:, i] = weight1 * state1[:, i] + weight2 * state2[:, i]
+    
+    combined_state[:, 3] = state2[:, 3]  # 속도는 MPC 상태를 사용
+    return combined_state
 
 class HybridMIController(BaseController):
     def __init__(self, horizon, dt, wheelbase, map_instance):
@@ -56,31 +81,37 @@ class HybridMIController(BaseController):
         trajectory = [current_state.copy()]
 
         for i in range(len(ref_trajectory)):
-            if self.mpc_controller.is_goal_reached(current_state, goal_position):
+            if np.all(self.mpc_controller.is_goal_reached(current_state, goal_position)):
                 print("Goal reached successfully!")
                 break
 
             # MPC와 Pure Pursuit에서 각각의 상태 예측
             ref_segment = ref_trajectory[i:i + self.mpc_controller.horizon]
-            state_mpc = self.mpc_controller.optimize_control(current_state, ref_segment)
-            next_state_mpc = self.mpc_controller.apply_control(current_state, state_mpc)
 
+            # global planning
+            ref_segment_interpole = transform_trajectory_with_angles(ref_segment[:3], num_points=4, last_segment_factor=1)
+            # print(f"global planning: {ref_segment_interpole}")
+
+            # local planning: mpc
+            control_input, predicted_states_mpc = self.mpc_controller.optimize_control(current_state, ref_segment)
+            # print(f"local planning mpc: {predicted_states_mpc}")
+
+            # local planning: pure_pursuit
             target_state = self.pure_pursuit_controller.find_target_state(current_state, ref_trajectory)
-            steering_angle_pure_pursuit = self.pure_pursuit_controller.compute_control(current_state, target_state)
-            next_state_pure_pursuit = self.pure_pursuit_controller.apply_control(current_state, steering_angle_pure_pursuit, velocity=0.5)
+            predicted_states_pursuit = self.predict_trajectory(current_state, target_state)
+            # print(f"local planning pure_pursuit: {predicted_states_pursuit}")
+            # steering_angle_pure_pursuit = self.pure_pursuit_controller.compute_control(current_state, target_state)
+            # next_state_pure_pursuit = self.pure_pursuit_controller.apply_control(current_state, steering_angle_pure_pursuit, velocity=0.5)
+            
 
-            print(f"Next State MPC: {next_state_mpc}")
-            print(f"Next State Pure Pursuit: {next_state_pure_pursuit}")
-
-            # 현재 스텝에서 두 경로 간의 Mutual Information 계산
-            mi = mutual_information(np.array([next_state_mpc]), np.array([next_state_pure_pursuit]))
-            print(f"Mutual Information: {mi}")
-
-            # 두 경로를 결합하여 최적 경로 생성
-            combined_state = optimize_combined_path(next_state_mpc, next_state_pure_pursuit, mi)
-
-            # 다음 상태로 업데이트
-            current_state = combined_state
+            if predicted_states_mpc is None:
+                print("Error: MPC failed to produce predicted states.")
+                return False, 0, np.array(trajectory)
+            elif len(predicted_states_mpc) == self.mpc_controller.horizon:
+                # 현재 스텝에서 두 경로 간의 Mutual Information 계산
+                mi = mutual_information(np.array(predicted_states_pursuit), np.array(predicted_states_mpc))
+                combined_state = combine_states(np.array(predicted_states_pursuit), np.array(predicted_states_mpc), mi)
+                current_state = combined_state[0]
             trajectory.append(current_state)
 
             if show_process:
@@ -92,15 +123,42 @@ class HybridMIController(BaseController):
         print("Trajectory following completed.")
         return True, total_distance, np.array(trajectory)
 
-def main(map_type="ComplexGridMap"):
-    if map_type == "ParkingLot":
-        map_instance = ParkingLot(lot_width=20, lot_height=20)
-    else:
-        map_instance = ComplexGridMap(lot_width=20, lot_height=20)
+def main():
+    parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")
+    parser.add_argument('--map', type=str, default='fixed_grid', choices=['parking_lot', 'fixed_grid', 'random_grid'], help='Choose the map type.')
+    parser.add_argument('--conf', help='Path to configuration JSON file', default=None)
+    args = parser.parse_args()
 
-    start_pose = map_instance.get_random_valid_start_position()
-    goal_pose = map_instance.get_random_valid_goal_position()
-    print(f"Start Path Planning (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
+    if args.conf:
+        # Read the JSON file and extract parameters
+        with open(args.conf, 'r') as f:
+            config = json.load(f)
+
+        start_pose = Pose(config['start_pose'][0], config['start_pose'][1], config['start_pose'][2])
+        goal_pose = Pose(config['goal_pose'][0], config['goal_pose'][1], config['goal_pose'][2])
+        width = config.get('width', 50)
+        height = config.get('height', 50)
+        obstacles = config.get('obstacles', [])
+    else:
+        # Use default parameters
+        width = 50
+        height = 50
+        start_pose = Pose(2, 2, 0)
+        goal_pose = Pose(width - 5, height - 5, 0)
+        obstacles = None  # Will trigger default obstacles in the class
+
+    # Map selection using dictionary
+    map_options = {
+        'parking_lot': ParkingLot,
+        'fixed_grid': FixedGridMap,
+        'random_grid': RandomGridMap
+    }
+    map_instance = map_options[args.map](width, height, obstacles)
+
+    if args.map == "random_grid":
+        start_pose = map_instance.get_random_valid_start_position()
+        goal_pose = map_instance.get_random_valid_goal_position()
+    print(f"Start planning (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
     map_instance.plot_map(title="Path Planning with MPC and Pure Pursuit")
     plt.plot(start_pose.x, start_pose.y, "og")
@@ -113,15 +171,19 @@ def main(map_type="ComplexGridMap"):
         print(f"Error in route generation: {e}")
         return
 
-    if len(rx_opt) == 0 or len(ry_opt) == 0:
+    if not isReached:
         print("TRRT* was unable to generate a valid path.")
         return
 
     ref_trajectory = transform_trajectory_with_angles(route_trajectory_opt)
 
-    mpc_controller = MPCController(horizon=10, dt=0.1, map_instance=map_instance, wheelbase=2.5)
-    pure_pursuit_controller = PurePursuitController(lookahead_distance=5.0, dt=0.1, wheelbase=2.5, map_instance=map_instance)
-    controller = HybridController(mpc_controller, pure_pursuit_controller)
+    # Plot Optimized Path 
+    plt.plot(route_trajectory_opt[:, 0], route_trajectory_opt[:, 1], "-r", label="Informed TRRT* Path")  # Red solid line
+
+    horizon = 10  # MPC horizon
+    dt = 0.1  # Time step
+    wheelbase = 2.5  # Example wheelbase of the vehicle in meters
+    controller = HybridMIController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
 
     goal_position = [goal_pose.x, goal_pose.y]
     is_reached, trajectory_distance, trajectory  = controller.follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=True)

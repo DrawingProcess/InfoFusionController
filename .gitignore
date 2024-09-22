@@ -1,6 +1,9 @@
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,python
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,python
 
+results/test_controller/*.png
+results/test_route_planner/*.png
+
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
