@@ -17,7 +17,7 @@ def calculate_trajectory_distance(trajectory):
 def transform_trajectory(x_array, y_array):
     return np.array([list(pair) for pair in zip(x_array, y_array)])
 
-def transform_trajectory_with_angles(trajectory, num_points=50, velocity=1.0, last_segment_factor=5):
+def transform_trajectory_with_angles(trajectory, num_points=30, velocity=2.0, last_segment_factor=1):
     trajectory = np.array(trajectory)  # trajectory를 numpy 배열로 변환
     
     n = len(trajectory)

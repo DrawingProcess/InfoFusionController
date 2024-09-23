@@ -20,8 +20,9 @@ class AdaptiveMPCController(MPCController):
         self.previous_control = None
 
     def update_horizon(self, current_state, ref_trajectory):
-        # Update horizon dynamically based on current state or trajectory deviation
-        if np.linalg.norm(current_state[:2] - ref_trajectory[0][:2]) > 5:
+        # Update horizon dynamically based on deviation
+        deviation = np.linalg.norm(current_state[:2] - ref_trajectory[0][:2])
+        if deviation > 5:
             self.horizon = min(self.horizon + 1, 20)
         else:
             self.horizon = max(self.horizon - 1, 5)
@@ -34,22 +35,51 @@ class AdaptiveMPCController(MPCController):
 
         is_reached = True
 
+        # Initialize reference index
+        ref_index = 0  # Start from the beginning of the trajectory
+
+        # Maximum index in the reference trajectory
+        max_ref_index = len(ref_trajectory) - 1
+
         # Follow the reference trajectory
-        for i in range(len(ref_trajectory)):
+        while True:
             if self.is_goal_reached(current_state, goal_position):
                 print("Goal reached successfully!")
                 break
 
-            self.horizon = min(self.horizon, len(ref_trajectory) - i)
+            # Limit the search window to ±window_size around ref_index
+            window_size = 10  # Adjust this parameter as needed
+            search_start = max(ref_index - window_size, 0)
+            search_end = min(ref_index + window_size, max_ref_index)
 
-            ref_segment = ref_trajectory[i:i + self.horizon]
+            # Compute distances in the search window
+            search_indices = np.arange(search_start, search_end + 1)
+            ref_points = ref_trajectory[search_indices, :2]
+            distances = np.linalg.norm(ref_points - current_state[:2], axis=1)
+
+            # Find the index of the closest point in the search window
+            min_distance_index = np.argmin(distances)
+            ref_index = search_indices[min_distance_index]
+
+            # Update horizon dynamically
+            ref_segment_end = min(ref_index + self.horizon, max_ref_index + 1)
+            ref_segment = ref_trajectory[ref_index:ref_segment_end]
+
+            # If ref_segment is shorter than horizon, pad it with the last point
+            if len(ref_segment) < self.horizon:
+                last_point = ref_segment[-1]
+                num_padding = self.horizon - len(ref_segment)
+                padding = np.tile(last_point, (num_padding, 1))
+                ref_segment = np.vstack((ref_segment, padding))
+
             self.update_horizon(current_state, ref_segment)
+
             control_input, predicted_states = self.optimize_control(current_state, ref_segment)
             next_state = self.apply_control(current_state, control_input)
 
             adjusted_states = self.avoid_obstacle(current_state, next_state)
             if not self.is_collision_free(current_state, next_state):
-                print(f"Collision detected at step {i}. Attempting to avoid obstacle...")
+                print(f"Collision detected at state {current_state}. Attempting to avoid obstacle...")
                 is_reached, next_state = self.select_best_path(current_state, adjusted_states, goal_position)
                 if not is_reached:
                     print("Goal not reachable.")
@@ -58,8 +88,10 @@ class AdaptiveMPCController(MPCController):
             current_state = next_state
             trajectory.append(current_state)
 
-            # Plot current state
+            # Plot current state and predicted path
             if show_process:
+                plt.plot(predicted_states[:, 0], predicted_states[:, 1], "b--")
+                plt.plot(ref_segment[:, 0], ref_segment[:, 1], "g--")
                 plt.plot(current_state[0], current_state[1], "xr")
                 plt.pause(0.001)
 
@@ -113,7 +145,7 @@ def main():
         goal_pose = map_instance.get_random_valid_goal_position()
     print(f"Start planning (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
-    # 맵과 장애물 및 시작/목표 지점을 표시
+    # Plot the map and start/goal positions
     map_instance.plot_map(title="Adaptive MPC Route Planner")
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")

@@ -15,6 +15,7 @@ from route_planner.informed_trrt_star_planner import InformedTRRTStar
 from controller.mpc_controller import MPCController
 from controller.adaptive_mpc_controller import AdaptiveMPCController
 from controller.pure_pursuit_controller import PurePursuitController
+from controller.mpc_mi_controller import MPCMIController
 from controller.hybrid_mi_controller import HybridMIController
 from controller.multi_purpose_mpc_controller import MultiPurposeMPCController
 from controller.stanley_controller import StanleyController
@@ -96,7 +97,7 @@ def main():
         'pure_pursuit': lambda: PurePursuitController(lookahead_distance=5.0, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
         'mpc_basic': lambda: MPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
         'adaptive_mpc': lambda: AdaptiveMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
-        'hybrid_mi': lambda: HybridMIController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
+        'mpc_mi': lambda: MPCMIController(horizons=[5, 10, 15], dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
         # 'multi_purpose_mpc': lambda: MultiPurposeMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
         # 'stanley': lambda: StanleyController(k=0.1, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
     }

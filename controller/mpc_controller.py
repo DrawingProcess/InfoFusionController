@@ -57,7 +57,7 @@ class MPCController(BaseController):
                 if len(predicted_states) > len(ref_trajectory):
                     predicted_states = predicted_states[:len(ref_trajectory)]
 
-                # 충돌 여부를 확인
+                # validate collision-free states
                 if all(self.is_collision_free(state, s) for s in predicted_states):
                     cost = self.compute_cost(predicted_states, ref_trajectory)
                     if cost < min_cost:
@@ -67,14 +67,14 @@ class MPCController(BaseController):
 
         # best_control이 없을 때, 기본 움직임을 설정하고 최소한의 예측 상태 생성
         if best_control is None:
-            best_control = (0.1, 0.0)  # 기본값: 천천히 직진
-            # best_predicted_states = []
-            # state = current_state
-            # for _ in range(self.horizon):
-            #     state = self.apply_control(state, best_control)
-            #     best_predicted_states.append(list(state))
+            best_control = (0.5, 0.0)  # 기본값: 천천히 직진
+            best_predicted_states = []
+            state = current_state
+            for _ in range(self.horizon):
+                state = self.apply_control(state, best_control)
+                best_predicted_states.append(list(state))
 
-        return best_control, best_predicted_states
+        return best_control, np.array(best_predicted_states)
 
     def follow_trajectory(self, start_pose, ref_trajectory, goal_position, show_process=False):
         # Initialize the state and trajectory
@@ -84,21 +84,57 @@ class MPCController(BaseController):
 
         is_reached = True
 
+        # Initialize reference index
+        ref_index = 0  # Start from the beginning of the trajectory
+
+        # Maximum index in the reference trajectory
+        max_ref_index = len(ref_trajectory) - 1
+
         # Follow the reference trajectory
-        for i in range(len(ref_trajectory)):
+        while True:
             if self.is_goal_reached(current_state, goal_position):
                 print("Goal reached successfully!")
                 break
-            
-            self.horizon = min(self.horizon, len(ref_trajectory) - i)
 
-            ref_segment = ref_trajectory[i:i + self.horizon]
+            # Limit the search window to ±window_size around ref_index
+            window_size = 10  # Adjust this parameter as needed
+            search_start = max(ref_index - window_size, 0)
+            search_end = min(ref_index + window_size, max_ref_index)
+
+            # Compute distances in the search window
+            search_indices = np.arange(search_start, search_end + 1)
+            ref_points = ref_trajectory[search_indices, :2]
+            distances = np.linalg.norm(ref_points - current_state[:2], axis=1)
+
+            # Find the index of the closest point in the search window
+            min_distance_index = np.argmin(distances)
+            ref_index = search_indices[min_distance_index]
+
+            # Extract ref_segment from ref_index to ref_index + horizon
+            ref_segment_end = min(ref_index + self.horizon, max_ref_index + 1)
+            ref_segment = ref_trajectory[ref_index:ref_segment_end]
+
+            # If ref_segment is shorter than horizon, pad it with the last point
+            if len(ref_segment) < self.horizon:
+                last_point = ref_segment[-1]
+                num_padding = self.horizon - len(ref_segment)
+                padding = np.tile(last_point, (num_padding, 1))
+                ref_segment = np.vstack((ref_segment, padding))
+
             control_input, predicted_states = self.optimize_control(current_state, ref_segment)
+
+            # Plot predicted states and reference segment if desired
+            if show_process:
+                plt.plot(predicted_states[:, 0], predicted_states[:, 1], "b--")
+                plt.plot(ref_segment[:, 0], ref_segment[:, 1], "g--")
+                plt.plot(current_state[0], current_state[1], "xr")
+                plt.pause(0.001)
+
             next_state = self.apply_control(current_state, control_input)
 
             adjusted_states = self.avoid_obstacle(current_state, next_state)
             if not self.is_collision_free(current_state, next_state):
-                print(f"Collision detected at step {i}. Attempting to avoid obstacle...")
+                print(f"Collision detected at state {current_state}. Attempting to avoid obstacle...")
                 is_reached, next_state = self.select_best_path(current_state, adjusted_states, goal_position)
                 if not is_reached:
                     print("Goal not reachable.")
@@ -107,18 +143,13 @@ class MPCController(BaseController):
             current_state = next_state
             trajectory.append(current_state)
 
-            # Plot current state
-            if show_process:
-                plt.plot(current_state[0], current_state[1], "xr")
-                plt.pause(0.001)
-
         # If the goal is still not reached, adjust the final position
         if not self.is_goal_reached(current_state, goal_position):
             print("Final adjustment to reach the goal.")
             current_state[0], current_state[1] = goal_position
             current_state[2] = calculate_angle(current_state[0], current_state[1], goal_position[0], goal_position[1])
             trajectory.append(current_state)
-    
+
         total_distance = calculate_trajectory_distance(trajectory)
 
         print("Trajectory following completed.")

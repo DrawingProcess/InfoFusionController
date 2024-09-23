@@ -4,7 +4,6 @@ from scipy.stats import entropy
 import json
 import argparse
 
-
 from utils import calculate_angle, calculate_trajectory_distance, transform_trajectory_with_angles
 
 from map.parking_lot import ParkingLot
@@ -12,8 +11,7 @@ from map.fixed_grid_map import FixedGridMap
 from map.random_grid_map import RandomGridMap
 
 from controller.base_controller import BaseController
-from controller.adaptive_mpc_controller import AdaptiveMPCController
-from controller.pure_pursuit_controller import PurePursuitController
+from controller.mpc_controller import MPCController
 
 from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
 
@@ -24,7 +22,7 @@ def mutual_information(state1, state2):
     min_len = min(len(state1), len(state2))
     state1 = state1[:min_len]
     state2 = state2[:min_len]
-    
+
     for i in range(3):  # [x, y, theta]
         # Compute histograms with density=False
         hist1, _ = np.histogram(state1[:, i], bins=5, density=False)
@@ -37,19 +35,16 @@ def mutual_information(state1, state2):
         # Normalize histograms
         hist1 /= np.sum(hist1)
         hist2 /= np.sum(hist2)
-        # print(f"State {i} Histograms: {hist1}, {hist2}")
         
         # Calculate entropy
         entropy1 = entropy(hist1)
         entropy2 = entropy(hist2)
-        # print(f"State {i} Entropy: {entropy1}, {entropy2}")
         
         # Compute joint histogram and normalize
         joint_hist, _, _ = np.histogram2d(state1[:, i], state2[:, i], bins=5, density=False)
         joint_hist = joint_hist.astype(float) + 1e-12
         joint_hist /= np.sum(joint_hist)
         joint_entropy = entropy(joint_hist.flatten())
-        # print(f"Joint Entropy: {joint_entropy}")
         
         # Calculate Mutual Information
         mi = entropy1 + entropy2 - joint_entropy
@@ -57,65 +52,108 @@ def mutual_information(state1, state2):
     
     return np.array(mi_list)
 
-# 두 알고리즘의 상태를 결합하는 함수
-def combine_states(state1, state2, mi):
-    """Mutual Information 기반으로 상태를 결합"""
-    combined_state = np.zeros_like(state1)
-    print(f"State 1: {state1}, State 2: {state2}")
-    
-    # Mutual Information을 바탕으로 각 상태에 가중치를 부여하여 결합
-    for i in range(3):  # [x, y, theta, velocity]
-        weight2 = mi[i] / (mi[i] + 1)  # Mutual Information 비율에 따른 가중치
-        weight1 = 1 - weight2
-        print(f"State {i} MI: {mi[i]}, Weights: {weight1}, {weight2}")
-        combined_state[:, i] = weight1 * state1[:, i] + weight2 * state2[:, i]
-    
-    combined_state[:, 3] = state2[:, 3]  # 속도는 MPC 상태를 사용
-    return combined_state
-
-class HybridMIController(BaseController):
-    def __init__(self, horizon, dt, wheelbase, map_instance):
-        super().__init__(dt, wheelbase, map_instance)
-        self.mpc_controller = AdaptiveMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
-        self.pure_pursuit_controller = PurePursuitController(lookahead_distance=5.0, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
+class MPCMIController(MPCController):
+    def __init__(self, horizons, dt, wheelbase, map_instance):
+        super().__init__(horizon=max(horizons), dt=dt, wheelbase=wheelbase, map_instance=map_instance)
+        self.mpc_controllers = []
+        for h in horizons:
+            mpc = MPCController(horizon=h, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
+            self.mpc_controllers.append(mpc)
 
     def follow_trajectory(self, start_pose, ref_trajectory, goal_position, show_process=False):
-        # 초기 상태 설정
+        # Initialize current state
         current_state = np.array([start_pose.x, start_pose.y, start_pose.theta, 0.0])
         trajectory = [current_state.copy()]
 
-        for i in range(len(ref_trajectory)):
-            if np.all(self.mpc_controller.is_goal_reached(current_state, goal_position)):
+        # Initialize reference index
+        ref_index = 0  # Start from the beginning of the trajectory
+
+        # Maximum index in the reference trajectory
+        max_ref_index = len(ref_trajectory) - 1
+
+        # Ensure ref_trajectory is a numpy array
+        ref_trajectory = np.array(ref_trajectory)
+
+        while True:
+            if self.is_goal_reached(current_state, goal_position):
                 print("Goal reached successfully!")
                 break
 
-            # MPC와 Pure Pursuit에서 각각의 상태 예측
-            ref_segment = ref_trajectory[i:i + self.mpc_controller.horizon]
+            # Limit the search window to ±window_size around ref_index
+            window_size = 10  # Adjust this parameter as needed
+            search_start = max(ref_index - window_size, 0)
+            search_end = min(ref_index + window_size, max_ref_index)
 
-            # global planning
-            ref_segment_interpole = transform_trajectory_with_angles(ref_segment[:3], num_points=4, last_segment_factor=1)
-            # print(f"global planning: {ref_segment_interpole}")
+            # Compute distances in the search window
+            search_indices = np.arange(search_start, search_end + 1)
+            ref_points = ref_trajectory[search_indices, :2]
+            distances = np.linalg.norm(ref_points - current_state[:2], axis=1)
 
-            # local planning: mpc
-            control_input, predicted_states_mpc = self.mpc_controller.optimize_control(current_state, ref_segment)
-            # print(f"local planning mpc: {predicted_states_mpc}")
+            # Find the index of the closest point in the search window
+            min_distance_index = np.argmin(distances)
+            ref_index = search_indices[min_distance_index]
 
-            # local planning: pure_pursuit
-            target_state = self.pure_pursuit_controller.find_target_state(current_state, ref_trajectory)
-            predicted_states_pursuit = self.predict_trajectory(current_state, target_state)
-            # print(f"local planning pure_pursuit: {predicted_states_pursuit}")
-            # steering_angle_pure_pursuit = self.pure_pursuit_controller.compute_control(current_state, target_state)
-            # next_state_pure_pursuit = self.pure_pursuit_controller.apply_control(current_state, steering_angle_pure_pursuit, velocity=0.5)
-            
-            if predicted_states_mpc is None:
-                print("Error: MPC failed to produce predicted states.")
+            # Extract reference segment for this step
+            max_horizon = max([mpc.horizon for mpc in self.mpc_controllers])
+            ref_segment_end = min(ref_index + max_horizon, max_ref_index + 1)
+            ref_segment = ref_trajectory[ref_index:ref_segment_end]
+
+            # If ref_segment is shorter than max_horizon, pad it with the last point
+            if len(ref_segment) < max_horizon:
+                last_point = ref_segment[-1]
+                num_padding = max_horizon - len(ref_segment)
+                padding = np.tile(last_point, (num_padding, 1))
+                ref_segment = np.vstack((ref_segment, padding))
+
+            mi_values = []
+            predicted_states_list = []
+            control_inputs = []
+
+            # For each MPC controller
+            for mpc in self.mpc_controllers:
+                # Local planning: MPC
+                control_input, predicted_states_mpc = mpc.optimize_control(current_state, ref_segment)
+
+                if predicted_states_mpc is None or len(predicted_states_mpc) == 0:
+                    mi = -np.inf  # Assign negative infinity if failed
+                else:
+                    # Adjust the length of predicted_states_mpc and ref_segment to be equal
+                    min_len = min(len(predicted_states_mpc), len(ref_segment))
+                    predicted_states_mpc = np.array(predicted_states_mpc)[:min_len]
+                    ref_segment_trimmed = ref_segment[:min_len]
+                    mi = mutual_information(predicted_states_mpc, ref_segment_trimmed)
+                    mi = np.sum(mi)  # Sum the mutual information over the state variables
+
+                    if show_process:
+                        plt.plot(predicted_states_mpc[:, 0], predicted_states_mpc[:, 1], "b--")
+                        plt.plot(ref_segment_trimmed[:, 0], ref_segment_trimmed[:, 1], "g--")
+                mi_values.append(mi)
+                predicted_states_list.append(predicted_states_mpc)
+                control_inputs.append(control_input)
+
+            # Select the MPC with highest mutual information
+            best_mi_index = np.argmax(mi_values)
+            best_mpc = self.mpc_controllers[best_mi_index]
+            best_predicted_states = predicted_states_list[best_mi_index]
+            best_control_input = control_inputs[best_mi_index]
+
+            if best_predicted_states is None or len(best_predicted_states) == 0:
+                print("Error: All MPC controllers failed to produce predicted states.")
                 return False, 0, np.array(trajectory)
-            elif len(predicted_states_mpc) == self.mpc_controller.horizon:
-                # 현재 스텝에서 두 경로 간의 Mutual Information 계산
-                mi = mutual_information(np.array(ref_segment_interpole), np.array(predicted_states_mpc))
-                combined_state = combine_states(np.array(ref_segment_interpole), np.array(predicted_states_mpc), mi)
-                current_state = combined_state[0]
-            trajectory.append(current_state)
+            else:
+                # Apply control and handle obstacle avoidance
+                next_state = self.apply_control(current_state, best_control_input)
+
+                adjusted_states = self.avoid_obstacle(current_state, next_state)
+                if not self.is_collision_free(current_state, next_state):
+                    print(f"Collision detected at state {current_state}. Attempting to avoid obstacle...")
+                    is_reached, next_state = self.select_best_path(current_state, adjusted_states, goal_position)
+                    if not is_reached:
+                        print("Goal not reachable.")
+                        return is_reached, 0, np.array(trajectory)
+
+                current_state = next_state
+                trajectory.append(current_state)
 
             if show_process:
                 plt.plot(current_state[0], current_state[1], "xr")
@@ -163,7 +201,7 @@ def main():
         goal_pose = map_instance.get_random_valid_goal_position()
     print(f"Start planning (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
-    map_instance.plot_map(title="Path Planning with MPC and Pure Pursuit")
+    map_instance.plot_map(title="Path Planning with MPC")
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
 
@@ -183,10 +221,10 @@ def main():
     # Plot Optimized Path 
     plt.plot(route_trajectory_opt[:, 0], route_trajectory_opt[:, 1], "-r", label="Informed TRRT* Path")  # Red solid line
 
-    horizon = 10  # MPC horizon
+    horizons = [5, 10, 15]  # Different MPC horizons
     dt = 0.1  # Time step
     wheelbase = 2.5  # Example wheelbase of the vehicle in meters
-    controller = HybridMIController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
+    controller = MPCMIController(horizons=horizons, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
 
     goal_position = [goal_pose.x, goal_pose.y]
     is_reached, trajectory_distance, trajectory  = controller.follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=True)
@@ -194,7 +232,7 @@ def main():
     if is_reached:
         print("Plotting the final trajectory.")
         print(f"Total distance covered: {trajectory_distance}")
-        plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label="MPC Path")
+        plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label="Selected MPC Path")
         plt.legend()
         plt.show()
 
