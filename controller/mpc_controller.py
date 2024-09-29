@@ -18,18 +18,6 @@ class MPCController(BaseController):
         super().__init__(dt, wheelbase, map_instance)
         self.horizon = horizon
 
-    def apply_control(self, state, control_input):
-        x, y, theta, v = state
-        v_ref, delta_ref = control_input
-
-        # Update the state using the kinematic bicycle model
-        x += v * np.cos(theta) * self.dt
-        y += v * np.sin(theta) * self.dt
-        theta += v / self.wheelbase * np.tan(delta_ref) * self.dt
-        v += v_ref * self.dt
-
-        return np.array([x, y, theta, v])
-
     def compute_cost(self, predicted_states, ref_trajectory):
         cost = 0
         for i in range(len(predicted_states)):
@@ -45,12 +33,14 @@ class MPCController(BaseController):
         best_predicted_states = None
         min_cost = float('inf')
 
-        for v_ref in np.linspace(-1, 1, 7):  # 속도 범위를 세밀하게 설정
+        predicted_lines = []
+
+        for a_ref in np.linspace(-1, 1, 7):  # 가속도 범위를 세밀하게 설정
             for delta_ref in np.linspace(-np.pi/6, np.pi/6, 7):  # 조향 각도 범위 설정
                 predicted_states = []
                 state = current_state
                 for _ in range(self.horizon):
-                    state = self.apply_control(state, (v_ref, delta_ref))
+                    state = self.apply_control(state, (a_ref, delta_ref))
                     predicted_states.append(list(state))
 
                 # predicted states와 reference trajectory 길이를 맞춤
@@ -62,9 +52,18 @@ class MPCController(BaseController):
                     cost = self.compute_cost(predicted_states, ref_trajectory)
                     if cost < min_cost:
                         min_cost = cost
-                        best_control = (v_ref, delta_ref)
+                        best_control = (a_ref, delta_ref)
                         best_predicted_states = predicted_states
 
+                # print(f"predicted_states: {predicted_states}")
+                predicted_states = np.array(predicted_states)
+                predicted_lines.append(plt.plot(predicted_states[:, 0], predicted_states[:, 1], "b-", label="Predicted Path")[0])
+
+        # plt.pause(0.001)
+        for line in predicted_lines:
+            line.remove()
+        predicted_lines = []
+        
         # best_control이 없을 때, 기본 움직임을 설정하고 최소한의 예측 상태 생성
         if best_control is None:
             best_control = (0.5, 0.0)  # 기본값: 천천히 직진
@@ -81,6 +80,9 @@ class MPCController(BaseController):
         start_pose.theta = calculate_angle(start_pose.x, start_pose.y, ref_trajectory[1, 0], ref_trajectory[1, 1])
         current_state = np.array([start_pose.x, start_pose.y, start_pose.theta, 0.0])
         trajectory = [current_state.copy()]
+
+        steering_angles = []
+        accelations = []
 
         is_reached = True
 
@@ -122,6 +124,13 @@ class MPCController(BaseController):
                 ref_segment = np.vstack((ref_segment, padding))
 
             control_input, predicted_states = self.optimize_control(current_state, ref_segment)
+            next_state = self.apply_control(current_state, control_input)
+
+            accelations.append(control_input[0])
+            steering_angles.append(control_input[1])
+
+            current_state = next_state
+            trajectory.append(current_state)
 
             # Plot predicted states and reference segment if desired
             if show_process:
@@ -129,19 +138,6 @@ class MPCController(BaseController):
                 plt.plot(ref_segment[:, 0], ref_segment[:, 1], "g--")
                 plt.plot(current_state[0], current_state[1], "xr")
                 plt.pause(0.001)
-
-            next_state = self.apply_control(current_state, control_input)
-
-            adjusted_states = self.avoid_obstacle(current_state, next_state)
-            if not self.is_collision_free(current_state, next_state):
-                print(f"Collision detected at state {current_state}. Attempting to avoid obstacle...")
-                is_reached, next_state = self.select_best_path(current_state, adjusted_states, goal_position)
-                if not is_reached:
-                    print("Goal not reachable.")
-                    return is_reached, 0, np.array(trajectory)
-
-            current_state = next_state
-            trajectory.append(current_state)
 
         # If the goal is still not reached, adjust the final position
         if not self.is_goal_reached(current_state, goal_position):
@@ -153,12 +149,13 @@ class MPCController(BaseController):
         total_distance = calculate_trajectory_distance(trajectory)
 
         print("Trajectory following completed.")
-        return is_reached, total_distance, np.array(trajectory)
+        return is_reached, total_distance, np.array(trajectory), np.array(steering_angles), np.array(accelations)
 
 def main():
     parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")
     parser.add_argument('--map', type=str, default='fixed_grid', choices=['parking_lot', 'fixed_grid', 'random_grid'], help='Choose the map type.')
     parser.add_argument('--conf', help='Path to configuration JSON file', default=None)
+    parser.add_argument('--show_process', action='store_true', help='Show the process of the route planner')
     args = parser.parse_args()
 
     if args.conf:

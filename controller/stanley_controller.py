@@ -21,12 +21,15 @@ class StanleyController(BaseController):
 
     def compute_control(self, current_state, target_state):
         # 현재 상태와 목표 지점의 좌표를 추출
-        x, y, theta = current_state[:3]
-        target_x, target_y = target_state[:2]
+        x, y, theta, v = current_state
+        x_next, y_next, theta_next, v_next = target_state
     
+        # 원하는 속도 계산
+        a_ref = (v_next - v) / self.dt  # This is acceleration
+
         # 경로 각도 계산
-        dx = target_x - x
-        dy = target_y - y
+        dx = x_next - x
+        dy = y_next - y
         path_angle = math.atan2(dy, dx)
     
         # Heading error (차량의 방향과 경로의 방향 간의 차이)
@@ -39,13 +42,13 @@ class StanleyController(BaseController):
     
         # Stanley 조향각 계산
         velocity = max(current_state[3], 0.1)  # 속도가 0에 가까울 때를 방지
-        steering_angle = heading_error + math.atan2(self.k * cross_track_error, velocity)
+        delta_ref = heading_error + math.atan2(self.k * cross_track_error, velocity)
     
         # 차량이 올바른 방향으로 가고 있는지 확인하고, 뒤로 가는 경우를 방지
         if np.cos(heading_error) < 0:  # 만약 헤딩 에러가 90도 이상이면 차량이 뒤로 가려는 경우
-            steering_angle += math.pi  # 조향각을 반대로 뒤집어 전진하도록 함
+            delta_ref += math.pi  # 조향각을 반대로 뒤집어 전진하도록 함
     
-        return steering_angle
+        return a_ref, delta_ref
 
 
 def main():

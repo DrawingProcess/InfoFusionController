@@ -65,6 +65,9 @@ class MPCMIController(MPCController):
         current_state = np.array([start_pose.x, start_pose.y, start_pose.theta, 0.0])
         trajectory = [current_state.copy()]
 
+        steering_angles = []
+        accelations = []
+
         # Initialize reference index
         ref_index = 0  # Start from the beginning of the trajectory
 
@@ -144,13 +147,12 @@ class MPCMIController(MPCController):
                 # Apply control and handle obstacle avoidance
                 next_state = self.apply_control(current_state, best_control_input)
 
-                adjusted_states = self.avoid_obstacle(current_state, next_state)
-                if not self.is_collision_free(current_state, next_state):
-                    print(f"Collision detected at state {current_state}. Attempting to avoid obstacle...")
-                    is_reached, next_state = self.select_best_path(current_state, adjusted_states, goal_position)
-                    if not is_reached:
-                        print("Goal not reachable.")
-                        return is_reached, 0, np.array(trajectory)
+                # 현재 상태에서 next_states[0]으로 가기 위한 제어 입력 계산
+                control_input = self.compute_control(current_state, next_state)
+
+                # 스티어링 각도와 속도 저장
+                accelations.append(control_input[0])
+                steering_angles.append(control_input[1])
 
                 current_state = next_state
                 trajectory.append(current_state)
@@ -162,7 +164,7 @@ class MPCMIController(MPCController):
         total_distance = calculate_trajectory_distance(trajectory)
 
         print("Trajectory following completed.")
-        return True, total_distance, np.array(trajectory)
+        return True, total_distance, np.array(trajectory), np.array(steering_angles), np.array(accelations)
 
 def main():
     parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")

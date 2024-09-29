@@ -18,32 +18,47 @@ class BaseController:
         self.wheelbase = wheelbase  # Wheelbase of the vehicle
         self.map_instance = map_instance  # Map instance for collision checking
     
-    def compute_control(self, current_state, target_state):
-        # 현재 상태와 목표 지점의 좌표를 추출
-        x, y, theta = current_state[:3]
-        target_x, target_y = target_state[:2]
-
-        # 현재 위치와 목표 지점 간의 상대 위치 계산
-        dx = target_x - x
-        dy = target_y - y
-        target_angle = math.atan2(dy, dx)
-
-        # 차량의 조향각 계산 (Pure Pursuit 공식)
-        alpha = target_angle - theta
-        # 조향각은 (2 * 목표 지점까지의 y 거리) / (lookahead 거리) 로 계산
-        lookahead_distance = np.hypot(dx, dy)  # 목표 지점까지의 거리
-        steering_angle = math.atan2(2.0 * self.wheelbase * math.sin(alpha), lookahead_distance)
-
-        return steering_angle
-
-    def apply_control(self, current_state, steering_angle, velocity):
+    def compute_control(self, current_state, next_state):
         x, y, theta, v = current_state
+        x_next, y_next, theta_next, v_next = next_state
 
-        # Update the state using a kinematic bicycle model
-        x += v * math.cos(theta) * self.dt  # Assume fixed time step of 0.1 seconds
-        y += v * math.sin(theta) * self.dt
-        theta += v / self.wheelbase * math.tan(steering_angle) * self.dt
-        v = velocity  # Assume constant velocity
+        # 원하는 속도 계산
+        a_ref = (v_next - v) / self.dt
+
+        # 다음 상태로의 위치 변화량 계산
+        dx = x_next - x
+        dy = y_next - y
+        distance = np.hypot(dx, dy)
+
+        # 원하는 진행 방향 계산
+        desired_theta = np.arctan2(dy, dx)
+
+        # 진행 방향 오차 계산
+        theta_error = desired_theta - theta
+        theta_error = np.arctan2(np.sin(theta_error), np.cos(theta_error))  # [-pi, pi] 범위로 정규화
+
+        # 스티어링 각도 계산
+        if distance > 0.001:  # 0으로 나누는 것을 방지
+            curvature = 2 * np.sin(theta_error) / distance
+            delta_ref = np.arctan(curvature * self.wheelbase)
+        else:
+            delta_ref = 0.0
+
+        # 스티어링 각도 제한 적용
+        max_steering_angle = np.radians(30)  # 최대 스티어링 각도 (라디안)
+        delta_ref = np.clip(delta_ref, -max_steering_angle, max_steering_angle)
+
+        return a_ref, delta_ref
+
+    def apply_control(self, state, control_input):
+        x, y, theta, v = state
+        a_ref, delta_ref = control_input
+
+        # Update the state using the kinematic bicycle model
+        x += v * np.cos(theta) * self.dt
+        y += v * np.sin(theta) * self.dt
+        theta += v / self.wheelbase * np.tan(delta_ref) * self.dt
+        v += a_ref * self.dt
 
         return np.array([x, y, theta, v])
 
@@ -142,8 +157,8 @@ class BaseController:
         predicted_trajectory = []
         state = current_state.copy()
         for _ in range(n_steps):
-            steering_angle = self.compute_control(state, target_point)
-            state = self.apply_control(state, steering_angle, velocity)
+            control_input = self.compute_control(state, target_point)
+            state = self.apply_control(state, control_input)
             predicted_trajectory.append(state.copy())
         return np.array(predicted_trajectory)
 
@@ -153,6 +168,8 @@ class BaseController:
         current_state = np.array([start_pose.x, start_pose.y, start_pose.theta, 0.5])  # Start with a small velocity
         trajectory = [current_state.copy()]
 
+        steering_angles = []
+        accelations = []
         predicted_lines = []
 
         is_reached = True
@@ -168,7 +185,7 @@ class BaseController:
                 # Clear the old prediction lines if they exist
                 for line in predicted_lines:
                     line.remove()
-                predicted_lines = []
+                predicted_lines = []    
 
                 # Plot the new prediction lines
                 predicted_trajectory = self.predict_trajectory(current_state, target_state)
@@ -183,7 +200,6 @@ class BaseController:
                     # Mark adjusted target points with a red 'X' and add to predicted_lines for clearing later
                     marker = plt.plot(adjusted_state[0], adjusted_state[1], 'rx')[0]
                     predicted_lines.append(marker)
-                plt.legend()
                 plt.pause(0.001)
             
             if not self.is_collision_free(current_state, target_state):
@@ -193,9 +209,13 @@ class BaseController:
                     return is_reached, 0, np.array(trajectory)
             
             # Apply control
-            steering_angle = self.compute_control(current_state, target_state)
-            current_state = self.apply_control(current_state, steering_angle, velocity=0.5)  # Constant velocity
+            control_input = self.compute_control(current_state, target_state)
+            current_state = self.apply_control(current_state, control_input)  # Constant velocity
             trajectory.append(current_state)
+
+            # 스티어링 각도와 속도 저장
+            accelations.append(control_input[0])
+            steering_angles.append(control_input[1])
 
         # If the goal is still not reached, adjust the final position
         if self.is_goal_reached(current_state, goal_position):
@@ -207,7 +227,7 @@ class BaseController:
         total_distance = calculate_trajectory_distance(trajectory)
 
         print("Trajectory following completed.")
-        return is_reached, total_distance, np.array(trajectory)
+        return is_reached, total_distance, np.array(trajectory), np.array(steering_angles), np.array(accelations)
 
 def main():
     parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")

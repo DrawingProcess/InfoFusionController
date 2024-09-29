@@ -2,6 +2,7 @@ import argparse
 import time
 import json
 import matplotlib.pyplot as plt
+import numpy as np
 
 from utils import transform_trajectory_with_angles
 
@@ -94,10 +95,15 @@ def main():
     wheelbase = 2.5  # Example wheelbase of the vehicle in meters
     goal_position = [goal_pose.x, goal_pose.y]
     algorithms = {
-        'pure_pursuit': lambda: PurePursuitController(lookahead_distance=5.0, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
-        'mpc_basic': lambda: MPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
-        'adaptive_mpc': lambda: AdaptiveMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
-        'mpc_mi': lambda: MPCMIController(horizons=[5, 10, 15], dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
+        'pure_pursuit': lambda: PurePursuitController(lookahead_distance=5.0, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
+            .follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
+        'mpc_basic': lambda: MPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
+            .follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
+        'adaptive_mpc': lambda: AdaptiveMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
+            .follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
+        'hybrid_mi': lambda: HybridMIController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
+            .follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
+        # 'mpc_mi': lambda: MPCMIController(horizons=[5, 10, 15], dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
         # 'multi_purpose_mpc': lambda: MultiPurposeMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
         # 'stanley': lambda: StanleyController(k=0.1, dt=dt, wheelbase=wheelbase, map_instance=map_instance).follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
     }
@@ -106,6 +112,8 @@ def main():
     performance_results = {}
     distance_results = {}
     fail_counts = {name: 0 for name in algorithms}
+    steering_data = {name: [] for name in algorithms}
+    accel_data = {name: [] for name in algorithms}
 
     for name, func in algorithms.items():
         count = 0
@@ -123,9 +131,13 @@ def main():
             # 경로가 유효한 경우 컨트롤러 실행
             ref_trajectory = transform_trajectory_with_angles(route_trajectory_opts[count])
             start_time = time.time()
-            is_reached, trajectory_distance, trajectory = func()
+            is_reached, trajectory_distance, trajectory, steering_angles, accelations = func()
             end_time = time.time()
             control_time = end_time - start_time
+
+            # 스티어링 각도 및 속도 데이터 저장
+            steering_data[name].append(steering_angles)
+            accel_data[name].append(accelations)
 
             if not is_reached:
                 fail_counts[name] += 1
@@ -169,7 +181,7 @@ def main():
     ax1.barh(algorithm_names, fail_values, color='red')
     ax1.set_xlabel("Fail Count")
     ax1.set_ylabel("Algorithm")
-    ax1.set_title("Algorithm Pathfinding Failure Counts ({MAX_ITER} Runs)")
+    ax1.set_title(f"Algorithm Pathfinding Failure Counts ({MAX_ITER} Runs)")
     ax1.grid(True)
 
     # Performance Results Plot
@@ -177,7 +189,7 @@ def main():
     times = [result[1] for result in sorted_performs]
     ax2.barh(algorithm_names, times, color='skyblue')
     ax2.set_xlabel("Average Execution Time (seconds)")
-    ax2.set_title("Algorithm Performance Comparison ({MAX_ITER} Runs)")
+    ax2.set_title(f"Algorithm Performance Comparison ({MAX_ITER} Runs)")
     ax2.grid(True)
 
     # Performance Results Plot
@@ -185,12 +197,65 @@ def main():
     dists = [result[1] for result in sorted_dists]
     ax3.barh(algorithm_names, dists, color='purple')
     ax3.set_xlabel("Average Trajectory Distance (m)")
-    ax3.set_title("Algorithm Performance Comparison ({MAX_ITER} Runs)")
+    ax3.set_title(f"Algorithm Trajectory Distance Comparison ({MAX_ITER} Runs)")
     ax3.grid(True)
 
     # Adjust layout and show plot
     plt.tight_layout()  # Ensure there's enough space between the plots
     plt.savefig("results/test_controller/performance_controller.png")
+
+    # 스티어링 힐 히스토그램 생성
+    for name in algorithms.keys():
+        plt.figure()
+        plt.hist(steering_data[name][0], bins=30, alpha=0.7, color='green')
+        plt.title(f"Steering Angle Histogram: {name}")
+        plt.xlabel("Steering Angle (radians)")
+        plt.ylabel("Frequency")
+        plt.savefig(f"results/test_controller/steering_histogram_{name}.png")
+        plt.close()
+
+    # 속도 변화량 그래프 생성
+    for name in algorithms.keys():
+        plt.figure()
+        accelations = accel_data[name][0]
+        time_steps = np.arange(len(accelations)) * dt
+        plt.plot(time_steps, accelations, label='Acceleration')
+        plt.title(f"acceleration over Time: {name}")
+        plt.xlabel("Time (s)")
+        plt.ylabel("Acceleration: change in velocity (m/s^2)")
+        plt.legend()
+        plt.savefig(f"results/test_controller/acceleration_over_time_{name}.png")
+        plt.close()
+
+    # for name in algorithms.keys():
+    #     plt.figure()
+    #     plt.barh(name, fail_counts[name], color='red')
+    #     plt.title("{name} Failure Counts")
+    #     plt.xlabel("Fail Count")
+    #     plt.ylabel("Algorithm")
+    #     plt.savefig(f"results/test_controller/{name}_fail_count.png")
+    #     plt.close()
+    
+    # for name in algorithms.keys():
+    #     plt.figure()
+    #     plt.barh(name, distance_data[name], color='skyblue')
+    #     plt.title(f"{name} Average Trajectory Distance")
+    #     plt.xlabel("Distance (m)")
+    #     plt.ylabel("Algorithm")
+    #     plt.savefig(f"results/test_controller/{name}_trajectory_distance.png")
+    #     plt.close()
+
+    # # 알고리즘 실행 시간 그래프 생성
+    # for name in algorithms.keys():
+    #     plt.figure()
+    #     # runs = np.arange(1, len(execution_times[name]) + 1)
+    #     plt.barh(name, execution_times[name], label='Execution Time')
+    #     plt.title(f"{name} Execution Time")
+    #     plt.xlabel("Execution Time (s)")
+    #     plt.ylabel("Algorithm")
+    #     plt.legend()
+    #     plt.savefig(f"results/test_controller/{name}_execution_time.png")
+    #     plt.close()
 
 if __name__ == "__main__":
     main()

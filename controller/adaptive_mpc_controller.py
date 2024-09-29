@@ -33,6 +33,9 @@ class AdaptiveMPCController(MPCController):
         current_state = np.array([start_pose.x, start_pose.y, start_pose.theta, 0.0])
         trajectory = [current_state.copy()]
 
+        steering_angles = []
+        accelations = []
+
         is_reached = True
 
         # Initialize reference index
@@ -77,13 +80,8 @@ class AdaptiveMPCController(MPCController):
             control_input, predicted_states = self.optimize_control(current_state, ref_segment)
             next_state = self.apply_control(current_state, control_input)
 
-            adjusted_states = self.avoid_obstacle(current_state, next_state)
-            if not self.is_collision_free(current_state, next_state):
-                print(f"Collision detected at state {current_state}. Attempting to avoid obstacle...")
-                is_reached, next_state = self.select_best_path(current_state, adjusted_states, goal_position)
-                if not is_reached:
-                    print("Goal not reachable.")
-                    return is_reached, 0, np.array(trajectory)
+            accelations.append(control_input[0])
+            steering_angles.append(control_input[1])
 
             current_state = next_state
             trajectory.append(current_state)
@@ -105,7 +103,7 @@ class AdaptiveMPCController(MPCController):
         total_distance = calculate_trajectory_distance(trajectory)
 
         print("Trajectory following completed.")
-        return True, total_distance, np.array(trajectory)
+        return True, total_distance, np.array(trajectory), np.array(steering_angles), np.array(accelations)
 
 
 def main():

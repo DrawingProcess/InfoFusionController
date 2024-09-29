@@ -45,21 +45,34 @@ class PurePursuitController(BaseController):
         target_state = [target_point[0], target_point[1], theta, velocity]
 
         return target_state
+    
+    def compute_control(self, current_state, target_state):
+        x, y, theta, v = current_state
+        x_next, y_next, theta_next, v_next = target_state
 
-    def compute_control(self, state, target_state):
-        x, y, theta = state[:3]
-        target_x, target_y = target_state[:2]
+        # 원하는 속도 계산
+        a_ref = (v_next - v) / self.dt  # This is acceleration
 
-        # 각도 오차 계산
-        dx = target_x - x
-        dy = target_y - y
-        target_angle = math.atan2(dy, dx)
+        # 위치 변화량 계산
+        dx = x_next - x
+        dy = y_next - y
+        distance = np.hypot(dx, dy)
 
-        # Calculate the steering angle using the Pure Pursuit formula
-        alpha = target_angle - theta
-        steering_angle = math.atan2(2 * self.wheelbase * math.sin(alpha), self.lookahead_distance)
+        # 목표 각도 계산
+        desired_theta = np.arctan2(dy, dx)
 
-        return steering_angle
+        # 진행 방향 오차 계산
+        theta_error = desired_theta - theta
+        theta_error = np.arctan2(np.sin(theta_error), np.cos(theta_error))  # [-pi, pi] 범위로 정규화
+
+        # 스티어링 각도 계산
+        delta_ref = np.arctan2(2 * self.wheelbase * np.sin(theta_error), self.lookahead_distance)
+
+        # 스티어링 각도 제한 적용
+        max_steering_angle = np.radians(30)  # 최대 스티어링 각도 (라디안)
+        delta_ref = np.clip(delta_ref, -max_steering_angle, max_steering_angle)
+
+        return a_ref, delta_ref
 
 def main():
     parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")
