@@ -39,13 +39,28 @@ class PurePursuitController(BaseController):
             target_point = ref_trajectory[-1]
         else:
             target_point = ref_trajectory[target_index]
+        
 
         # target_point를 target_state로 변환 (theta와 velocity 추가)
-        velocity = state[3] if len(state) > 3 else 0.0  # 속도가 없을 경우 기본값 0.0 사용
+        if target_index > 0:
+            dx = ref_trajectory[target_index, 0] - ref_trajectory[target_index - 1, 0]
+            dy = ref_trajectory[target_index, 1] - ref_trajectory[target_index - 1, 1]
+            curvature = np.abs(dy) / (np.hypot(dx, dy) + 1e-6)  # Avoid division by zero
+            velocity = self.calculate_speed_based_on_curvature(curvature)
+        else:
+            velocity = self.min_speed
         target_state = [target_point[0], target_point[1], theta, velocity]
 
         return target_state
-    
+
+    def calculate_speed_based_on_curvature(self, curvature):
+        # 속도 조절: 곡률이 클수록 속도를 낮추고, 작을수록 속도를 높임
+        if curvature > 1.0:  # 커브가 클 때
+            return self.min_speed
+        else:
+            # 곡률에 따라 선형 보간하여 속도 결정
+            return self.min_speed + (self.max_speed - self.min_speed) * (1.0 - curvature)
+
     def compute_control(self, current_state, target_state):
         x, y, theta, v = current_state
         x_next, y_next, theta_next, v_next = target_state
