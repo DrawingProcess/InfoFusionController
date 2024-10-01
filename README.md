@@ -8,10 +8,10 @@ ADLAB-PLANNING
 │   test.sh                                     # test: test shell scripts
 |
 ├── conf
-│       map_custom.json
-│       map_easy.json
-│       map_hard.json
-│       map_medium.json
+│       map_custom.json                         # conf: complex rectangle road
+│       map_easy.json                           # conf: Re-imple map_easy in informed TRRT Star paper 
+│       map_hard.json                           # conf: Re-imple map_hard in informed TRRT Star paper 
+│       map_medium.json                         # conf: Re-imple map_medium in informed TRRT Star paper 
 │
 ├---control
 |       adaptive_mpc_controller.py              # control: adaptive mpc controller
