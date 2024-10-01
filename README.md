@@ -5,30 +5,38 @@
 ADLAB-PLANNING
 |   main.py                                     # main: Multiple planning, control algorithms available
 |   utils.py                                    # utils: calculate, tranform, ...
+│   test.sh                                     # test: test shell scripts
 |
-+---control
+├── conf
+│       map_custom.json
+│       map_easy.json
+│       map_hard.json
+│       map_medium.json
+│
+├---control
 |       adaptive_mpc_controller.py              # control: adaptive mpc controller
 |       base_controller.py                      # control: base controller
-|       mi_mpc_purpursuit_controller.py         # control: mutual information mpc pure pursuit controller
+|       hybrid_mi_controller.py                 # control: pure pursuit + mpc controller (mutual information)
+|       mpc_mi_controller.py                    # control: combinate multiple mpc controller (mutual information)
 |       mpc_controller.py                       # control: mpc controller
 |       mpc_parallel_controller.py              # control: mpc parallel controller
 |       multi_purpose_mpc_controller.py         # control: multi purpose mpc controller
 |       pure_pursuit_controller.py              # control: pure pursuit controller
 |       stanley_controller.py                   # control: stanley controller
 |
-+---map
-|       random_grid_map.py                     # map: random obstacle grid map
+├---map
+|       random_grid_map.py                      # map: random obstacle grid map
 |       fixed_grid_map.py                       # map: fixed obstacle grid map
 |       grid_map.py                             # map: base grid map
 |       parking_lot.py                          # map: parking lot grid map
 |
-+---results
-|       map_random_grid_map.png                # results: random obstacle grid map
+├---results
+|       map_random_grid_map.png                 # results: random obstacle grid map
 |       map_fixed_grid_map.png                  # results: fixed obstacle grid map
 |       map_grid_map.png                        # results: base grid map
 |       map_parking_lot.png                     # results: parking lot grid map
 |
-+---route_planner
+├---route_planner
 |       a_star_route_planner.py                 # route planner: a star 
 |       geometry.py                             # route planner: Pose, Node Class
 |       hybrid_a_star_route_planner.py          # route planner: hybrid a star 
@@ -39,7 +47,8 @@ ADLAB-PLANNING
 |       theta_star_planner.py                   # route planner: theta star 
 |
 \---test
-        algotithm_speed_test.py                 # test: Comparison of algorithmic speed performance
+        test_controller.py                      # test: controller
+        test_route_planner.py                   # test: route planner
 ```
 
 ## Env Settings
