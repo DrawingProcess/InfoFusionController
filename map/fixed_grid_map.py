@@ -10,23 +10,26 @@ class FixedGridMap(GridMap):
         super().__init__(width=width, height=height)
 
         if obstacles:
-            for obstacle in obstacles:
-                if obstacle['type'] == 'rectangle':
-                    # obstacle['coordinates'] is expected to be a list of four numbers [min_x, min_y, max_x, max_y]
-                    coords = obstacle['coordinates']
-                    self.add_fixed_rectangle(coords[0], coords[1], coords[2], coords[3])
-                elif obstacle['type'] == 'circle':
-                    # obstacle['parameters'] is expected to be a list [center_x, center_y, radius]
-                    params = obstacle['parameters']
-                    self.add_fixed_circle(params[0], params[1], params[2])
-                else:
-                    print(f"Unknown obstacle type: {obstacle['type']}")
+            self.add_config_obstacles(obstacles)
         else:
             # Default obstacles if no configuration is provided
             self.add_fixed_rectangle(13, 16, 24, 27)
             self.add_fixed_rectangle(30, 5, 42, 15)
             self.add_fixed_rectangle(42, 15, 48, 20)
             self.add_fixed_circle(33, 30, 4)
+
+    def add_config_obstacles(self, obstacles):
+        for obstacle in obstacles:
+            if obstacle['type'] == 'rectangle':
+                # obstacle['coordinates'] is expected to be a list of four numbers [min_x, min_y, max_x, max_y]
+                coords = obstacle['coordinates']
+                self.add_fixed_rectangle(coords[0], coords[1], coords[2], coords[3])
+            elif obstacle['type'] == 'circle':
+                # obstacle['parameters'] is expected to be a list [center_x, center_y, radius]
+                params = obstacle['parameters']
+                self.add_fixed_circle(params[0], params[1], params[2])
+            else:
+                print(f"Unknown obstacle type: {obstacle['type']}")
 
     def add_fixed_rectangle(self, min_x, min_y, max_x, max_y):
         # Add obstacle coordinates

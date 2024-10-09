@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import random
 import math
 
+from utils import transform_trajectory_with_angles
+
 from route_planner.geometry import Pose
 
 class GridMap:
@@ -123,7 +125,12 @@ class GridMap:
         return (0 <= t1 <= 1) or (0 <= t2 <= 1)
 
 
-    def plot_map(self, title, path=None):
+    def plot_map(self, title, map_path=None, path=None):
+        if map_path:
+            # Read and display background image
+            bg_image = plt.imread(map_path)
+            plt.imshow(bg_image, extent=[0, self.width, 0, self.height], origin='lower', cmap=plt.cm.gray)
+        
         obstacle_x = [x for x, y in self.obstacles]
         obstacle_y = [y for x, y in self.obstacles]
         plt.plot(obstacle_x, obstacle_y, ".k")  # 장애물은 검은색 점으로 표시
@@ -152,7 +159,9 @@ class GridMap:
         plt.grid(True)
         plt.axis("equal")
 
+    # map_instance.create_random_obstacles_in_path(ref_trajectory, n=3, box_size=(5, 5))
     def create_random_obstacles_in_path(self, ref_trajectory, n=3, box_size=(5, 5)):
+        ref_trajectory = transform_trajectory_with_angles(ref_trajectory)
         for _ in range(n):
             idx = random.randint(len(ref_trajectory)//4, len(ref_trajectory)*3//4 - 1)
             x, y, _, _ = ref_trajectory[idx]
