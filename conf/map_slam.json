@@ -1,0 +1,15 @@
+{
+    "start_pose": [10, 5, 0],
+    "goal_pose": [48, 48, 0],
+    "obstacles": [
+        {
+            "type": "rectangle",
+            "coordinates": [22, 18, 43, 24]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [38, 7, 44, 18]
+        }
+    ]
+}
+  
