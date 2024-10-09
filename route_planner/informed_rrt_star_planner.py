@@ -13,7 +13,7 @@ from route_planner.geometry import Pose, Node
 from route_planner.rrt_star_planner import RRTStar
 
 class InformedRRTStar(RRTStar):
-    def __init__(self, start, goal, map_instance, max_iter=300, search_radius=10, show_eclipse=False):
+    def __init__(self, start, goal, map_instance, max_iter=700, search_radius=3, show_eclipse=False):
         super().__init__(start, goal, map_instance, max_iter, search_radius)
         self.c_best = float("inf")  # Initialize the cost to reach the goal
         self.x_center = np.array([(self.start.x + self.goal.x) / 2.0, (self.start.y + self.goal.y) / 2.0])

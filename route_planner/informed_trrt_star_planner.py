@@ -16,7 +16,7 @@ from route_planner.theta_star_planner import ThetaStar  # Assume Theta* is imple
 from route_planner.informed_rrt_star_planner import InformedRRTStar
 
 class InformedTRRTStar(InformedRRTStar):
-    def __init__(self, start, goal, map_instance, max_iter=300, search_radius=10, show_eclipse=False):
+    def __init__(self, start, goal, map_instance, max_iter=700, search_radius=10, show_eclipse=False):
         super().__init__(start, goal, map_instance, max_iter, search_radius)
 
     def narrow_sample(self, trajectory):
