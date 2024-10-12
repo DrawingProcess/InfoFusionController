@@ -22,7 +22,7 @@ class MPCParallelController(MPCController):
         self.current_trajectory = None
         self.trajectory_lock = threading.Lock()
 
-    def follow_trajectory(self, start_pose, ref_trajectory, plot_queue):
+    def follow_trajectory(self, start_pose, ref_trajectory, goal_position, plot_queue):
         # Initialize the state and trajectory
         start_pose.theta = calculate_angle(start_pose.x, start_pose.y, ref_trajectory[1, 0], ref_trajectory[1, 1])
         current_state = np.array([start_pose.x, start_pose.y, start_pose.theta, 0.0])
@@ -197,7 +197,8 @@ def main():
     planning_thread.start()
 
     # Create and start the MPC control thread
-    control_thread = threading.Thread(target=mpc_controller.follow_trajectory, args=(start_pose, ref_trajectory, plot_queue))
+    goal_position = [goal_pose.x, goal_pose.y]
+    control_thread = threading.Thread(target=mpc_controller.follow_trajectory, args=(start_pose, ref_trajectory, goal_position, plot_queue))
     control_thread.start()
 
     # Start the plotting in the main thread

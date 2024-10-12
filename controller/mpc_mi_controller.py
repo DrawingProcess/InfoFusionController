@@ -62,51 +62,27 @@ class MPCMIController(MPCController):
 
     def follow_trajectory(self, start_pose, ref_trajectory, goal_position, show_process=False):
         # Initialize current state
+        start_pose.theta = calculate_angle(start_pose.x, start_pose.y, ref_trajectory[1, 0], ref_trajectory[1, 1])
         current_state = np.array([start_pose.x, start_pose.y, start_pose.theta, 0.0])
         trajectory = [current_state.copy()]
 
         steering_angles = []
         accelations = []
 
+        is_reached = True
+
         # Initialize reference index
         ref_index = 0  # Start from the beginning of the trajectory
 
-        # Maximum index in the reference trajectory
-        max_ref_index = len(ref_trajectory) - 1
-
-        # Ensure ref_trajectory is a numpy array
-        ref_trajectory = np.array(ref_trajectory)
-
         while True:
-            if self.is_goal_reached(current_state, goal_position):
-                print("Goal reached successfully!")
+            if self.is_goal_reached(current_state, goal_position, tolerance=5):
+                print("Final adjustment to reach the goal.")
+                current_state[0], current_state[1] = goal_position
+                current_state[2] = calculate_angle(current_state[0], current_state[1], goal_position[0], goal_position[1])
+                trajectory.append(current_state)
                 break
 
-            # Limit the search window to ±window_size around ref_index
-            window_size = 10  # Adjust this parameter as needed
-            search_start = max(ref_index - window_size, 0)
-            search_end = min(ref_index + window_size, max_ref_index)
-
-            # Compute distances in the search window
-            search_indices = np.arange(search_start, search_end + 1)
-            ref_points = ref_trajectory[search_indices, :2]
-            distances = np.linalg.norm(ref_points - current_state[:2], axis=1)
-
-            # Find the index of the closest point in the search window
-            min_distance_index = np.argmin(distances)
-            ref_index = search_indices[min_distance_index]
-
-            # Extract reference segment for this step
-            max_horizon = max([mpc.horizon for mpc in self.mpc_controllers])
-            ref_segment_end = min(ref_index + max_horizon, max_ref_index + 1)
-            ref_segment = ref_trajectory[ref_index:ref_segment_end]
-
-            # If ref_segment is shorter than max_horizon, pad it with the last point
-            if len(ref_segment) < max_horizon:
-                last_point = ref_segment[-1]
-                num_padding = max_horizon - len(ref_segment)
-                padding = np.tile(last_point, (num_padding, 1))
-                ref_segment = np.vstack((ref_segment, padding))
+            ref_segment, ref_index = self.get_ref_segment(current_state, ref_trajectory, ref_index)
 
             mi_values = []
             predicted_states_list = []
@@ -142,7 +118,7 @@ class MPCMIController(MPCController):
 
             if best_predicted_states is None or len(best_predicted_states) == 0:
                 print("Error: All MPC controllers failed to produce predicted states.")
-                return False, 0, np.array(trajectory)
+                return False, 0, np.array(trajectory), np.array(steering_angles), np.array(accelations)
             else:
                 # Apply control and handle obstacle avoidance
                 next_state = self.apply_control(current_state, best_control_input)
@@ -164,7 +140,7 @@ class MPCMIController(MPCController):
         total_distance = calculate_trajectory_distance(trajectory)
 
         print("Trajectory following completed.")
-        return True, total_distance, np.array(trajectory), np.array(steering_angles), np.array(accelations)
+        return is_reached, total_distance, np.array(trajectory), np.array(steering_angles), np.array(accelations)
 
 def main():
     parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")
@@ -229,7 +205,7 @@ def main():
     controller = MPCMIController(horizons=horizons, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
 
     goal_position = [goal_pose.x, goal_pose.y]
-    is_reached, trajectory_distance, trajectory  = controller.follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=True)
+    is_reached, trajectory_distance, trajectory, steering_angles, accelations  = controller.follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=True)
     
     if is_reached:
         print("Plotting the final trajectory.")

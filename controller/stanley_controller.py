@@ -122,7 +122,7 @@ def main():
 
     # Follow the trajectory using the Stanley controller
     goal_position = [goal_pose.x, goal_pose.y]
-    is_reached, trajectory_distance, trajectory  = controller.follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=True)
+    is_reached, trajectory_distance, trajectory, steering_angles, accelations  = controller.follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=True)
     
     if is_reached:
         print("Plotting the final trajectory.")

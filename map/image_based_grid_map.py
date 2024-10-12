@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 from map.fixed_grid_map import FixedGridMap
 
 class ImageBasedGridMap(FixedGridMap):
-    def __init__(self, image_path, obstacles, map_image_path=None):
+    def __init__(self, image_path, obstacles=[], map_image_path=None):
         # Read the edge image
         self.image_path = image_path
         edges = self.edge_detection(image_path)
@@ -26,20 +26,25 @@ class ImageBasedGridMap(FixedGridMap):
         # Canny Edge Detection
         edges = cv2.Canny(blurred_image, 50, 150)
         # _, edges = cv2.threshold(edges, 1, 255, cv2.THRESH_BINARY)
-        self.edges_map = "./map/fig/map_edges.png"
-        cv2.imwrite(self.edges_map, cv2.bitwise_not(edges))
+        self.map_edges = "./map/fig/map_edges.png"
+        cv2.imwrite(self.map_edges, cv2.bitwise_not(edges))
 
         # 1/20 스케일로 축소
         scale_factor = 1 / 20
         new_width = int(edges.shape[1] * scale_factor)
         new_height = int(edges.shape[0] * scale_factor)
         edges = cv2.resize(edges, (new_width, new_height), interpolation=cv2.INTER_AREA)
+        edges = cv2.bitwise_not(edges)
         
+        self.map_edges_low = "./map/fig/map_edges_low.png"
+        cv2.imwrite(self.map_edges_low, edges)
+        
+        edges = cv2.bitwise_not(edges)
         _, edges = cv2.threshold(edges, 1, 255, cv2.THRESH_BINARY)
         edges = cv2.bitwise_not(edges)
         
-        self.edges_map = "./map/fig/map_edges_low.png"
-        cv2.imwrite(self.edges_map, edges)
+        self.map_edges_low_thres = "./map/fig/map_edges_low_thres.png"
+        cv2.imwrite(self.map_edges_low_thres, edges)
 
         return edges
     
@@ -69,10 +74,9 @@ class ImageBasedGridMap(FixedGridMap):
     
     # Modify the plot_map method to include background image
     def plot_map(self, title, path=None):
-        if self.edges_map:
-            # Read and display background image
-            bg_image = plt.imread(self.edges_map)
-            plt.imshow(bg_image, extent=[0, self.width, 0, self.height], origin='lower', cmap=plt.cm.gray)
+        # Read and display background image
+        bg_image = plt.imread(self.image_path)
+        plt.imshow(bg_image, extent=[0, self.width, 0, self.height], origin='lower', cmap=plt.cm.gray)
         
         # # Plot obstacles
         # obstacle_x = [x for x, y in self.obstacles]
@@ -120,7 +124,7 @@ if __name__ == "__main__":
     map_image_path = "./map/fig/map_slam.png"  # Optional, if you want to include the background image
 
     # Create an instance of ImageBasedGridMap
-    map_instance = ImageBasedGridMap(50, 50, image_path=map_image_path)
+    map_instance = ImageBasedGridMap(image_path=map_image_path)
 
     # Plot the map
     map_instance.plot_map(title="Image Based Grid Map with Obstacles")

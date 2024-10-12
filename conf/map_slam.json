@@ -1,6 +1,6 @@
 {
     "start_pose": [10, 5, 0],
-    "goal_pose": [48, 48, 0],
+    "goal_pose": [48, 35, 0],
     "obstacles": [
         {
             "type": "rectangle",

@@ -14,7 +14,7 @@ from route_planner.geometry import Pose, Node
 
 
 class RRTStar:
-    def __init__(self, start, goal, map_instance, max_iter=300, search_radius=10):
+    def __init__(self, start, goal, map_instance, max_iter=700, search_radius=10):
         self.start = Node(start.x, start.y, 0.0)
         self.goal = Node(goal.x, goal.y, 0.0)
         self.map_instance = map_instance

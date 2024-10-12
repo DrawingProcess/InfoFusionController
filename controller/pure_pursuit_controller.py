@@ -15,9 +15,11 @@ from controller.base_controller import BaseController
 from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
 
 class PurePursuitController(BaseController):
-    def __init__(self, lookahead_distance, dt, wheelbase, map_instance):
+    def __init__(self, lookahead_distance, dt, wheelbase, map_instance, max_speed=5.0, min_speed=0.5):
         super().__init__(dt, wheelbase, map_instance)
         self.lookahead_distance = lookahead_distance  # Lookahead distance for Pure Pursuit
+        self.max_speed = max_speed  # Maximum speed of the vehicle
+        self.min_speed = min_speed  # Minimum speed of the vehicle
 
     def find_target_state(self, state, ref_trajectory):
         x, y, theta = state[:3]
@@ -40,11 +42,9 @@ class PurePursuitController(BaseController):
         else:
             target_point = ref_trajectory[target_index]
         
-
-        # target_point를 target_state로 변환 (theta와 velocity 추가)
-        if target_index > 0:
-            dx = ref_trajectory[target_index, 0] - ref_trajectory[target_index - 1, 0]
-            dy = ref_trajectory[target_index, 1] - ref_trajectory[target_index - 1, 1]
+        if target_index > 0 and target_index < len(ref_trajectory):
+            dx = ref_trajectory[target_index, 0] - x
+            dy = ref_trajectory[target_index, 1] - y
             curvature = np.abs(dy) / (np.hypot(dx, dy) + 1e-6)  # Avoid division by zero
             velocity = self.calculate_speed_based_on_curvature(curvature)
         else:
@@ -60,34 +60,6 @@ class PurePursuitController(BaseController):
         else:
             # 곡률에 따라 선형 보간하여 속도 결정
             return self.min_speed + (self.max_speed - self.min_speed) * (1.0 - curvature)
-
-    def compute_control(self, current_state, target_state):
-        x, y, theta, v = current_state
-        x_next, y_next, theta_next, v_next = target_state
-
-        # 원하는 속도 계산
-        a_ref = (v_next - v) / self.dt  # This is acceleration
-
-        # 위치 변화량 계산
-        dx = x_next - x
-        dy = y_next - y
-        distance = np.hypot(dx, dy)
-
-        # 목표 각도 계산
-        desired_theta = np.arctan2(dy, dx)
-
-        # 진행 방향 오차 계산
-        theta_error = desired_theta - theta
-        theta_error = np.arctan2(np.sin(theta_error), np.cos(theta_error))  # [-pi, pi] 범위로 정규화
-
-        # 스티어링 각도 계산
-        delta_ref = np.arctan2(2 * self.wheelbase * np.sin(theta_error), self.lookahead_distance)
-
-        # 스티어링 각도 제한 적용
-        max_steering_angle = np.radians(30)  # 최대 스티어링 각도 (라디안)
-        delta_ref = np.clip(delta_ref, -max_steering_angle, max_steering_angle)
-
-        return a_ref, delta_ref
 
 def main():
     parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")
@@ -151,7 +123,7 @@ def main():
     controller = PurePursuitController(lookahead_distance, dt, wheelbase, map_instance)
 
     goal_position = [goal_pose.x, goal_pose.y]
-    is_reached, trajectory_distance, trajectory  = controller.follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=True)
+    is_reached, trajectory_distance, trajectory, steering_angles, accelations  = controller.follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=True)
     
     if is_reached:
         print("Plotting the final trajectory.")

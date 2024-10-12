@@ -13,7 +13,7 @@ from route_planner.geometry import Pose, Node
 from route_planner.informed_rrt_star_planner import InformedRRTStar
 
 class InformedRRTSmoothStar(InformedRRTStar):
-    def __init__(self, start, goal, map_instance, max_iter=300, search_radius=10, show_eclipse=False):
+    def __init__(self, start, goal, map_instance, max_iter=700, search_radius=10, show_eclipse=False):
         super().__init__(start, goal, map_instance, max_iter, search_radius)
 
     def search_route(self, show_process=True):

@@ -39,8 +39,7 @@ class BaseController:
 
         # 스티어링 각도 계산
         if distance > 0.001:  # 0으로 나누는 것을 방지
-            curvature = 2 * np.sin(theta_error) / distance
-            delta_ref = np.arctan(curvature * self.wheelbase)
+            delta_ref = np.arctan2(2 * self.wheelbase * np.sin(theta_error), distance)
         else:
             delta_ref = 0.0
 
@@ -84,7 +83,7 @@ class BaseController:
         perpendicular_vector2 = np.array([direction_vector[1], -direction_vector[0]])  # 90도 시계 방향 회전
 
         # 장애물 회피를 위한 거리 설정
-        adjustment_distances = [0.5, 1.0, 2.0, 4.0]  # 두 개의 다른 거리로 조정
+        adjustment_distances = [0.5, 1.0, 2.0, 4.0, 6.0]  # 두 개의 다른 거리로 조정
 
         # 네 가지 회피 경로 생성
         adjusted_targets = []
@@ -109,13 +108,13 @@ class BaseController:
 
         for i, adjusted_state in enumerate(adjusted_states):
             if self.is_collision_free(current_state, adjusted_state):
-                print(f"Adjusted Target {i} is collision-free: {adjusted_state}")
+                # print(f"Adjusted Target {i} is collision-free: {adjusted_state}")
                 distance = np.linalg.norm(np.array(adjusted_state[:2]) - np.array(goal_position))
                 if distance < min_distance:
                     min_distance = distance
                     best_target = adjusted_state
-            else:
-                print(f"Adjusted Target {i} is in collision: {adjusted_state}")
+            # else:
+            #     print(f"Adjusted Target {i} is in collision: {adjusted_state}")
 
         if best_target is not None:
             return True, best_target
@@ -152,7 +151,7 @@ class BaseController:
 
         return target_state
 
-    def predict_trajectory(self, current_state, target_point, n_steps=10, velocity=0.5):
+    def predict_trajectory(self, current_state, target_point, n_steps=10):
         # Predict future trajectory using the kinematic bicycle model
         predicted_trajectory = []
         state = current_state.copy()
@@ -161,6 +160,36 @@ class BaseController:
             state = self.apply_control(state, control_input)
             predicted_trajectory.append(state.copy())
         return np.array(predicted_trajectory)
+
+    def get_ref_segment(self, current_state, ref_trajectory, ref_index):
+        max_ref_index = len(ref_trajectory) - 1
+
+        # Limit the search window to ±window_size around ref_index
+        window_size = 10  # Adjust this parameter as needed
+        search_start = max(ref_index - window_size, 0)
+        search_end = min(ref_index + window_size, max_ref_index)
+
+        # Compute distances in the search window
+        search_indices = np.arange(search_start, search_end + 1)
+        ref_points = ref_trajectory[search_indices, :2]
+        distances = np.linalg.norm(ref_points - current_state[:2], axis=1)
+
+        # Find the index of the closest point in the search window
+        min_distance_index = np.argmin(distances)
+        ref_index = search_indices[min_distance_index]
+
+        # Extract ref_segment from ref_index to ref_index + horizon
+        ref_segment_end = min(ref_index + self.horizon, max_ref_index + 1)
+        ref_segment = ref_trajectory[ref_index:ref_segment_end]
+
+        # If ref_segment is shorter than horizon, pad it with the last point
+        if len(ref_segment) < self.horizon:
+            last_point = ref_segment[-1]
+            num_padding = self.horizon - len(ref_segment)
+            padding = np.tile(last_point, (num_padding, 1))
+            ref_segment = np.vstack((ref_segment, padding))
+
+        return ref_segment, ref_index
 
     def follow_trajectory(self, start_pose, ref_trajectory, goal_position, show_process=False):
         # Initialize the state and trajectory
@@ -189,7 +218,7 @@ class BaseController:
 
                 # Plot the new prediction lines
                 predicted_trajectory = self.predict_trajectory(current_state, target_state)
-                print(f"predicted_trajectory: {predicted_trajectory}")
+                # print(f"predicted_trajectory: {predicted_trajectory}")
                 predicted_lines.append(plt.plot(predicted_trajectory[:, 0], predicted_trajectory[:, 1], "b-", label="Predicted Path")[0])
                 colors = ["g--", "r--"]
                 # labels = ["Left Avoid Path", "Right Avoid Path"]
@@ -206,11 +235,13 @@ class BaseController:
                 is_reached, target_state = self.select_best_path(current_state, adjusted_states, goal_position)
                 if not is_reached:
                     print("Goal not reachable.")
-                    return is_reached, 0, np.array(trajectory)
+                    return is_reached, 0, np.array(trajectory), np.array(steering_angles), np.array(accelations)
             
             # Apply control
             control_input = self.compute_control(current_state, target_state)
-            current_state = self.apply_control(current_state, control_input)  # Constant velocity
+            next_state = self.apply_control(current_state, control_input)  # Constant velocity
+            
+            current_state = next_state
             trajectory.append(current_state)
 
             # 스티어링 각도와 속도 저장

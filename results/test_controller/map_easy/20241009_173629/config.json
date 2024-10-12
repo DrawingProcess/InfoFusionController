@@ -1,0 +1,105 @@
+{
+    "start_pose": [
+        5,
+        5,
+        0
+    ],
+    "goal_pose": [
+        48,
+        48,
+        0
+    ],
+    "width": 50,
+    "height": 50,
+    "obstacles": [
+        {
+            "type": "rectangle",
+            "coordinates": [
+                13,
+                16,
+                24,
+                27
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                30,
+                5,
+                42,
+                15
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                42,
+                15,
+                48,
+                20
+            ]
+        },
+        {
+            "type": "circle",
+            "parameters": [
+                35,
+                30,
+                5
+            ]
+        }
+    ],
+    "dynamic_obstacles": [
+        {
+            "type": "rectangle",
+            "coordinates": [
+                38,
+                28,
+                43,
+                32
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                43,
+                34,
+                46,
+                37
+            ]
+        }
+    ],
+    "route_trajectory_opts": [
+        [
+            [
+                5.0,
+                5.0
+            ],
+            [
+                40.23017604477152,
+                21.62743320329838
+            ],
+            [
+                48.0,
+                48.0
+            ]
+        ],
+        [
+            [
+                5.0,
+                5.0
+            ],
+            [
+                31.537105302500677,
+                18.668797210997454
+            ],
+            [
+                43.27532568253367,
+                28.796515789214965
+            ],
+            [
+                48.0,
+                48.0
+            ]
+        ]
+    ]
+}
