@@ -16,7 +16,7 @@ ADLAB-PLANNING
 ├---control
 |       adaptive_mpc_controller.py              # control: adaptive mpc controller
 |       base_controller.py                      # control: base controller
-|       hybrid_mi_controller.py                 # control: pure pursuit + mpc controller (mutual information)
+|       info_fusion_controller.py                 # control: pure pursuit + mpc controller (mutual information)
 |       mpc_mi_controller.py                    # control: combinate multiple mpc controller (mutual information)
 |       mpc_controller.py                       # control: mpc controller
 |       mpc_parallel_controller.py              # control: mpc parallel controller
@@ -52,6 +52,11 @@ ADLAB-PLANNING
 ```
 
 ## Env Settings
+
+```shell
+conda env create -f planning.yaml
+conda activate planning
+```
 
 ```shell
 export QT_QPA_PLATFORM=xcb
