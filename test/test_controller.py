@@ -10,7 +10,7 @@ from utils import transform_trajectory_with_angles
 from map.parking_lot import ParkingLot
 from map.fixed_grid_map import FixedGridMap
 from map.random_grid_map import RandomGridMap
-from map.image_based_grid_map import ImageBasedGridMap
+from map.slam_grid_map import SlamGridMap
 
 from route_planner.geometry import Pose
 from route_planner.informed_trrt_star_planner import InformedTRRTStar
@@ -19,7 +19,7 @@ from controller.mpc_controller import MPCController
 from controller.adaptive_mpc_controller import AdaptiveMPCController
 from controller.pure_pursuit_controller import PurePursuitController
 from controller.mpc_mi_controller import MPCMIController
-from controller.hybrid_mi_controller import HybridMIController
+from controller.info_fusion_controller import InfoFusionController
 from controller.multi_purpose_mpc_controller import MultiPurposeMPCController
 from controller.stanley_controller import StanleyController
 
@@ -68,10 +68,10 @@ def main():
         'parking_lot': ParkingLot,
         'fixed_grid': FixedGridMap,
         'random_grid': RandomGridMap,
-        'image_grid': ImageBasedGridMap
+        'image_grid': SlamGridMap
     }
     if args.map == "image_grid":
-        map_instance = ImageBasedGridMap(image_path='./map/fig/map_slam.png', obstacles=obstacles)
+        map_instance = SlamGridMap(image_path='./map/fig/map_slam.png', obstacles=obstacles)
     else:
         map_instance = map_options[args.map](width, height, obstacles)
 
@@ -88,12 +88,12 @@ def main():
     num_trajectories = 2
 
     # Initialize route trajectories
-    if 'route_trajectory_opts' in config:
+    if 'route_trajectory' in config:
         # Load route trajectories from config
-        route_trajectory_opts = [np.array(opt) for opt in config['route_trajectory_opts']]
+        route_trajectory_opts = [np.array(opt) for opt in config['route_trajectory']]
         route_trajectorys = route_trajectory_opts  # Assuming route_trajectorys are similar
         num_trajectories = len(route_trajectory_opts)
-        print("Loaded route_trajectory_opts from config.")
+        print("Loaded route_trajectory from config.")
     else:
         route_trajectorys, route_trajectory_opts = [], []
         count = 0
@@ -118,7 +118,7 @@ def main():
             route_trajectory_opts.append(route_trajectory_opt.tolist())  # Convert to list for JSON serialization
             count += 1
 
-        config['route_trajectory_opts'] = route_trajectory_opts  # Save to config
+        config['route_trajectory'] = route_trajectory_opts  # Save to config
 
     # Handle dynamic obstacles
     if args.dynamic:
@@ -156,7 +156,7 @@ def main():
             .follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
         'adaptive_mpc': lambda: AdaptiveMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
             .follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
-        'hybrid_mi': lambda: HybridMIController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
+        'info_fusion': lambda: InfoFusionController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
             .follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
         # Add or remove controllers as needed
     }

@@ -1,0 +1,489 @@
+{
+    "start_pose": [
+        10,
+        5,
+        0
+    ],
+    "goal_pose": [
+        48,
+        35,
+        0
+    ],
+    "obstacles": [
+        {
+            "type": "rectangle",
+            "coordinates": [
+                22,
+                18,
+                43,
+                24
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                38,
+                7,
+                44,
+                18
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                0,
+                49,
+                2,
+                51
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                37,
+                46,
+                38,
+                47
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                12,
+                46,
+                13,
+                47
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                0,
+                46,
+                2,
+                48
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                21,
+                44,
+                25,
+                45
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                26,
+                43,
+                33,
+                45
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                7,
+                41,
+                10,
+                44
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                45,
+                41,
+                48,
+                45
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                16,
+                41,
+                18,
+                43
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                49,
+                40,
+                50,
+                41
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                4,
+                40,
+                5,
+                41
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                34,
+                39,
+                35,
+                40
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                29,
+                39,
+                31,
+                40
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                23,
+                38,
+                28,
+                43
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                49,
+                33,
+                50,
+                34
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                11,
+                33,
+                14,
+                40
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                9,
+                33,
+                10,
+                35
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                35,
+                30,
+                44,
+                35
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                32,
+                30,
+                36,
+                33
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                31,
+                29,
+                34,
+                32
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                22,
+                27,
+                25,
+                30
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                45,
+                27,
+                47,
+                28
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                21,
+                27,
+                47,
+                37
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                19,
+                27,
+                20,
+                28
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                34,
+                26,
+                38,
+                28
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                5,
+                26,
+                17,
+                47
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                0,
+                26,
+                1,
+                27
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                45,
+                23,
+                47,
+                25
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                27,
+                22,
+                30,
+                25
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                19,
+                23,
+                20,
+                24
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                14,
+                23,
+                17,
+                25
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                4,
+                23,
+                5,
+                24
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                0,
+                23,
+                2,
+                25
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                7,
+                19,
+                8,
+                21
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                45,
+                18,
+                47,
+                19
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                22,
+                16,
+                26,
+                18
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                45,
+                10,
+                47,
+                12
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                8,
+                9,
+                15,
+                17
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                49,
+                8,
+                51,
+                12
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                32,
+                7,
+                34,
+                9
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                6,
+                7,
+                15,
+                24
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                21,
+                6,
+                32,
+                13
+            ]
+        },
+        {
+            "type": "rectangle",
+            "coordinates": [
+                6,
+                5,
+                9,
+                9
+            ]
+        }
+    ],
+    "route_trajectory": [
+        [
+            [
+                10.0,
+                5.0
+            ],
+            [
+                15.824066746346773,
+                6.967025779506034
+            ],
+            [
+                22.006773119443558,
+                26.305864173664943
+            ],
+            [
+                32.63599655118096,
+                25.106034558172716
+            ],
+            [
+                41.2239733535149,
+                25.897637186179207
+            ],
+            [
+                44.12848056227272,
+                23.30019801566237
+            ],
+            [
+                43.747873838906685,
+                21.573869638313234
+            ],
+            [
+                48.69886210483948,
+                21.97249779272071
+            ],
+            [
+                48.0,
+                35.0
+            ]
+        ],
+        [
+            [
+                10.0,
+                5.0
+            ],
+            [
+                16.422508438628444,
+                7.239322042880788
+            ],
+            [
+                20.55174065011153,
+                23.913835993097813
+            ],
+            [
+                27.94629224709402,
+                25.79834211066201
+            ],
+            [
+                40.388122523682924,
+                25.129165791863343
+            ],
+            [
+                48.023895945439854,
+                26.389586535299756
+            ],
+            [
+                48.0,
+                35.0
+            ]
+        ]
+    ]
+}

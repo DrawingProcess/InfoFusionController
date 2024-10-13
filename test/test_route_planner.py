@@ -7,7 +7,7 @@ import os
 from map.parking_lot import ParkingLot
 from map.fixed_grid_map import FixedGridMap
 from map.random_grid_map import RandomGridMap
-from map.image_based_grid_map import ImageBasedGridMap
+from map.slam_grid_map import SlamGridMap
 
 from route_planner.geometry import Pose
 from route_planner.a_star_route_planner import AStarRoutePlanner
@@ -50,10 +50,10 @@ def main():
         'parking_lot': ParkingLot,
         'fixed_grid': FixedGridMap,
         'random_grid': RandomGridMap,
-        'image_grid': ImageBasedGridMap
+        'image_grid': SlamGridMap
     }
     if args.map == "image_grid":
-        map_instance = ImageBasedGridMap(image_path='./map/fig/map_slam.png', obstacles=obstacles)
+        map_instance = SlamGridMap(image_path='./map/fig/map_slam.png', obstacles=obstacles)
     else:
         map_instance = map_options[args.map](width, height, obstacles)
 
@@ -77,6 +77,7 @@ def main():
         "InformedSmoothingRRT*": lambda: InformedRRTSmoothStar(start_pose, goal_pose, map_instance, show_eclipse=show_process).search_route(show_process=show_process),
         "InformedTRRT*": lambda: InformedTRRTStar(start_pose, goal_pose, map_instance, show_eclipse=show_process).search_route(show_process=show_process),
     }
+    config["route_trajectory"] = {name: {} for name in algorithms}
 
     # 각 알고리즘의 성능 측정 및 실패 여부 확인
     performance_results = {}
@@ -105,7 +106,6 @@ def main():
             else:
                 total_time += time_taken
                 total_dist += result[1]
-            count += 1
 
             if result[0]:
                 plt.clf()  # 각 알고리즘 실행 전 플롯 초기화
@@ -115,12 +115,16 @@ def main():
 
                 if len(result) == 3:
                     trajectory_data[name][count] = result[2]
+                    config['route_trajectory'][name][count] = result[2].tolist()
                     plt.plot(result[2][:, 0], result[2][:, 1], "-r", label=name)  # Green dashed line
                 else: # len(result) == 4:
                     trajectory_data[name][count] = result[3]
+                    config['route_trajectory'][name][count] = result[3].tolist()
                     plt.plot(result[3][:, 0], result[3][:, 1], "-r", label=name)  # Red solid line
                 plt.legend(loc="upper left")
                 plt.savefig(os.path.join(args.output_dir, f"route_{name}_{count}.png"))
+
+            count += 1
     
         successful_runs = num_trajectories - fail_counts[name]
         if successful_runs != 0:
@@ -128,6 +132,10 @@ def main():
             distance_results[name] = total_dist / successful_runs
             print(f"{name}: {performance_results[name]:.6f} seconds (average)")
             print(f"{name}: {distance_results[name]:.6f} meters (average)")
+
+    # Save updated configuration
+    with open(os.path.join(args.output_dir, 'config.json'), 'w') as f:
+        json.dump(config, f, indent=4)
 
     # 성능 결과 정렬 및 출력
     sorted_performs = sorted(performance_results.items(), key=lambda x: x[1])
@@ -180,7 +188,7 @@ def main():
             if trajectory_data[name].get(i) is not None:
                 plt.plot(trajectory_data[name][i][:, 0], trajectory_data[name][i][:, 1], colors[j], label=name)
         plt.legend(loc="upper left")
-        plt.savefig(os.path.join(args.output_dir, f"compare_controller_trajectory_{i}.png"))
+        plt.savefig(os.path.join(args.output_dir, f"compare_route_trajectory_{i}.png"))
         plt.close()
 
 if __name__ == "__main__":

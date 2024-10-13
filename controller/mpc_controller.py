@@ -20,12 +20,31 @@ class MPCController(BaseController):
 
     def compute_cost(self, predicted_states, ref_trajectory):
         cost = 0
+        obstacle_avoidance_weight = 200  # 장애물 회피 비용 가중치
+        safe_distance = 1.0  # 장애물과의 최소 안전 거리(m)
+        max_deviation = 1.0  # 허용되는 최대 이탈 거리(m), 더 작은 값으로 설정
+        deviation_weight = 500  # 경로 이탈에 대한 가중치를 크게 설정
+
+        ref_target_state = ref_trajectory[len(predicted_states)-1]
         for i in range(len(predicted_states)):
             if i >= len(ref_trajectory):
                 break
             state = predicted_states[i]
             ref_state = ref_trajectory[i]
             cost += np.sum((state - ref_state) ** 2)
+
+            # 경로 이탈 페널티 추가 (더 강력하게 설정)
+            deviation = np.linalg.norm(state[:2] - ref_state[:2])
+            if deviation > max_deviation:
+                cost += deviation_weight * (deviation - max_deviation) ** 2
+
+            # 장애물 회피 비용
+            if not self.is_collision_free(state[:2], ref_target_state[:2]):
+                obstacle_distance, obstacle_angle = self.map_instance.get_nearest_obstacle_info(state)
+
+                if obstacle_distance is not None and obstacle_distance < safe_distance:
+                    cost += obstacle_avoidance_weight * (1 / (obstacle_distance + 1e-6)) * obstacle_angle
+
         return cost
 
     def predict_trajectory(self, current_state, control_input, ref_trajectory):
@@ -90,13 +109,11 @@ class MPCController(BaseController):
         accelations = []
 
         is_reached = True
-
-        # Initialize reference index
         ref_index = 0  # Start from the beginning of the trajectory
 
         # Follow the reference trajectory
         while True:
-            if self.is_goal_reached(current_state, goal_position, tolerance=5):
+            if self.is_goal_reached(current_state, goal_position):
                 print("Final adjustment to reach the goal.")
                 current_state[0], current_state[1] = goal_position
                 current_state[2] = calculate_angle(current_state[0], current_state[1], goal_position[0], goal_position[1])

@@ -37,16 +37,17 @@ class AdaptiveMPCController(MPCController):
         accelations = []
 
         is_reached = True
-
-        # Initialize reference index
         ref_index = 0  # Start from the beginning of the trajectory
 
         # Follow the reference trajectory
         while True:
             if self.is_goal_reached(current_state, goal_position):
-                print("Goal reached successfully!")
+                print("Final adjustment to reach the goal.")
+                current_state[0], current_state[1] = goal_position
+                current_state[2] = calculate_angle(current_state[0], current_state[1], goal_position[0], goal_position[1])
+                trajectory.append(current_state)
                 break
-
+            
             ref_segment, ref_index = self.get_ref_segment(current_state, ref_trajectory, ref_index)
 
             self.update_horizon(current_state, ref_segment)

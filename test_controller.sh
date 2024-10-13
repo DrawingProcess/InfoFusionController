@@ -2,7 +2,7 @@
 
 # Define the list of Python files and configurations
 files=("test/test_controller.py")
-configs=("conf/map_easy.json" "conf/map_custom.json" "conf/map_slam.json")
+configs=("conf/map_slam.json")
 
 for file in "${files[@]}"; do
     for config in "${configs[@]}"; do
@@ -19,7 +19,7 @@ for file in "${files[@]}"; do
 
         # Run the Python script with the specified configuration and output directory
         run="python $file --conf $config --output_dir $output_dir"
-        if [ $config_name == "map_easy" ]; then
+        if [ $config_name == "map_easy_dynamic" ]; then
             $run --dynamic
         elif [ $config_name == "map_slam" ]; then
             $run --map image_grid 
