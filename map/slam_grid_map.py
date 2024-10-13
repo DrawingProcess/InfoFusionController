@@ -4,8 +4,8 @@ from matplotlib import pyplot as plt
 
 from map.fixed_grid_map import FixedGridMap
 
-class ImageBasedGridMap(FixedGridMap):
-    def __init__(self, image_path, obstacles=[], map_image_path=None):
+class SlamGridMap(FixedGridMap):
+    def __init__(self, image_path, obstacles=[]):
         # Read the edge image
         self.image_path = image_path
         edges = self.edge_detection(image_path)
@@ -123,8 +123,8 @@ if __name__ == "__main__":
     # Paths to the images
     map_image_path = "./map/fig/map_slam.png"  # Optional, if you want to include the background image
 
-    # Create an instance of ImageBasedGridMap
-    map_instance = ImageBasedGridMap(image_path=map_image_path)
+    # Create an instance of SlamGridMap
+    map_instance = SlamGridMap(image_path=map_image_path)
 
     # Plot the map
     map_instance.plot_map(title="Image Based Grid Map with Obstacles")

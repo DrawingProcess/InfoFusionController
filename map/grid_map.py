@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import random
 import math
+import numpy as np
 
 from utils import transform_trajectory_with_angles
 
@@ -68,6 +69,41 @@ class GridMap:
             y = random.randint(self.height * 3 // 4, self.height)
             if self.is_valid_position(x, y):
                 return Pose(x, y, math.radians(90))
+
+    def get_nearest_obstacle_info(self, state):
+        x, y, heading_angle = state[:3]
+        min_distance = float('inf')
+        obstacle_angle = 0
+        search_radius = 5  # 검색 반경 설정
+
+        # ±15도를 라디안으로 변환
+        angle_threshold = np.deg2rad(15)
+
+        for dx in range(-search_radius, search_radius + 1):
+            for dy in range(-search_radius, search_radius + 1):
+                grid_x = int(x) + dx
+                grid_y = int(y) + dy
+                if 0 <= grid_x < self.width and 0 <= grid_y < self.height:
+                    if self.grid[grid_x][grid_y] == 1:
+                        # 장애물까지의 거리 및 각도 계산
+                        distance = np.hypot(dx, dy)
+                        obstacle_angle = np.arctan2(dy, dx)
+
+                        # 장애물이 진행 방향 기준 ±15도 내에 있는지 확인
+                        angle_diff = abs(self.normalize_angle(obstacle_angle - heading_angle))
+                        if angle_diff <= angle_threshold:
+                            if distance < min_distance:
+                                min_distance = distance
+                                target_obstacle_angle = angle_diff
+
+        # if there is no obstacle, return None
+        if min_distance == float('inf'):
+            return None, None  
+
+        return min_distance, target_obstacle_angle
+
+    def normalize_angle(self, angle):
+        return (angle + np.pi) % (2 * np.pi) - np.pi
 
     def is_not_crossed_obstacle(self, previous_node, current_node):
         is_cross_line = any(
@@ -158,45 +194,6 @@ class GridMap:
         plt.ylabel("Y [m]")
         plt.grid(True)
         plt.axis("equal")
-
-    # map_instance.create_random_obstacles_in_path(ref_trajectory, n=3, box_size=(5, 5))
-    def create_random_obstacles_in_path(self, ref_trajectory, n=3, box_size=(5, 5)):
-        ref_trajectory = transform_trajectory_with_angles(ref_trajectory)
-        for _ in range(n):
-            idx = random.randint(len(ref_trajectory)//4, len(ref_trajectory)*3//4 - 1)
-            x, y, _, _ = ref_trajectory[idx]
-            if self.is_valid_position(x, y):
-                pos = random.randint(0, box_size[0] // 2)
-                self.add_obstacle_box(x - pos, y - pos, box_size[0], box_size[1])
-
-    def add_obstacle_box(self, x, y, width, height):
-        """주어진 위치에 장애물 박스 추가"""
-        valid_points = []
-
-        """주어진 위치에 장애물 박스 추가"""
-        for i in range(width):
-            for j in range(height):
-                if self.is_valid_position(x + i, y + j):
-                    valid_points.append((x + i, y + j))
-                    self.obstacles.append((x + i, y + j))
-
-        if not valid_points:
-            return  # 유효한 좌표가 없으면 종료
-
-        # 유효한 영역의 최소 및 최대 좌표 계산
-        min_x = min(p[0] for p in valid_points)
-        max_x = max(p[0] for p in valid_points)
-        min_y = min(p[1] for p in valid_points)
-        max_y = max(p[1] for p in valid_points)
-
-        # 유효한 영역의 경계를 obstacle_lines에 추가
-        self.obstacle_lines.extend([
-            [(min_x, min_y), (max_x, min_y)],  # 상단 라인
-            [(min_x, min_y), (min_x, max_y)],  # 좌측 라인
-            [(max_x, min_y), (max_x, max_y)],  # 우측 라인
-            [(min_x, max_y), (max_x, max_y)]   # 하단 라인
-        ])
-        print(f"Added obstacle box at: ({min_x}, {min_y}) with size {width}x{height}")
 
 if __name__ == "__main__":
     # 맵 크기를 지정하여 GridMap 생성 (예: 100x75)
