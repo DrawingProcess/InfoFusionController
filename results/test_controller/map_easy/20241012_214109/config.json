@@ -48,7 +48,7 @@
             ]
         }
     ],
-    "dynamic_obstacles": [
+    "obstacles_dynamic": [
         {
             "type": "rectangle",
             "coordinates": [
