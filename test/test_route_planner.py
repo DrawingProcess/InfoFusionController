@@ -157,6 +157,12 @@ def main():
     ax1.set_title(f"Algorithm Pathfinding Failure Counts ({num_trajectories} Runs)")
     ax1.grid(True)
 
+    # Save Fail Counts to txt file
+    with open(os.path.join(args.output_dir, "fail_counts.txt"), "w") as f:
+        f.write("Algorithm\tFail Count\n")
+        for name, count in fail_counts.items():
+            f.write(f"{name}\t{count}\n")
+    
     # Performance Results Plot
     algorithm_names = [result[0] for result in sorted_performs]
     times = [result[1] for result in sorted_performs]
@@ -165,6 +171,12 @@ def main():
     ax2.set_title(f"Algorithm Performance Comparison ({num_trajectories} Runs)")
     ax2.grid(True)
 
+    # Save Performance Results to txt file
+    with open(os.path.join(args.output_dir, "performance_results.txt"), "w") as f:
+        f.write("Algorithm\tAverage Execution Time (seconds)\n")
+        for name, t in sorted_performs:
+            f.write(f"{name}\t{t}\n")
+    
     # Performance Results Plot
     algorithm_names = [result[0] for result in sorted_dists]
     dists = [result[1] for result in sorted_dists]
@@ -172,6 +184,12 @@ def main():
     ax3.set_xlabel("Average Trajectory Distance (m)")
     ax3.set_title(f"Algorithm Performance Comparison ({num_trajectories} Runs)")
     ax3.grid(True)
+
+    # Save Distance Results to txt file
+    with open(os.path.join(args.output_dir, "distance_results.txt"), "w") as f:
+        f.write("Algorithm\tAverage Trajectory Distance (m)\n")
+        for name, dist in sorted_dists:
+            f.write(f"{name}\t{dist}\n")
 
     # Adjust layout and show plot
     plt.tight_layout()  # Ensure there's enough space between the plots
@@ -183,7 +201,7 @@ def main():
         map_instance.plot_map(title=f"Compare Route Trajectory")
         plt.plot(start_pose.x, start_pose.y, "og")
         plt.plot(goal_pose.x, goal_pose.y, "xb")
-        colors = ["g-", "b-", "c-", "m-", "y-", "k-", "r-"]
+        colors = ["g--", "b--", "c--", "m--", "y--", "k--", "r-"]
         for j, name in enumerate(algorithms.keys()):
             if trajectory_data[name].get(i) is not None:
                 plt.plot(trajectory_data[name][i][:, 0], trajectory_data[name][i][:, 1], colors[j], label=name)
