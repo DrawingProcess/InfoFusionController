@@ -70,12 +70,60 @@ class SlamGridMap(FixedGridMap):
             obstacles.append({'type': 'rectangle', 'coordinates': [x, y, x + w, y + h]})
         
         return obstacles
-        
-    
+
     # Modify the plot_map method to include background image
     def plot_map(self, title, path=None):
         # Read and display background image
         bg_image = plt.imread(self.image_path)
+
+        plt.imshow(bg_image, extent=[0, self.width, 0, self.height], origin='lower', cmap=plt.cm.gray)
+        
+        # # Plot obstacles
+        # obstacle_x = [x for x, y in self.obstacles]
+        # obstacle_y = [y for x, y in self.obstacles]
+        # plt.plot(obstacle_x, obstacle_y, ".k")  # Obstacles as black dots
+    
+        # Plot rectangle obstacle lines
+        outer_lines = [
+            [(0, 0), (0, self.height)],
+            [(0, 0), (self.width, 0)],
+            [(self.width, 0), (self.width, self.height)],
+            [(0, self.height), (self.width, self.height)],
+        ]
+        for line in outer_lines:
+            x_values = [line[0][0], line[1][0]]
+            y_values = [line[0][1], line[1][1]]
+            plt.plot(x_values, y_values, "k-", linewidth=3.0)  # Obstacle lines as black lines
+    
+        # for line in self.obstacle_lines:
+        #     x_values = [line[0][0], line[1][0]]
+        #     y_values = [line[0][1], line[1][1]]
+        #     plt.plot(x_values, y_values, "k-")
+
+        # # Plot circular obstacles
+        # for center_x, center_y, radius in self.circular_obstacles:
+        #     circle = plt.Circle((center_x, center_y), radius, color='black', fill=False)
+        #     plt.gca().add_patch(circle)
+    
+        # Plot the path if provided
+        if path:
+            path_x = [x for x, y in path]
+            path_y = [y for x, y in path]
+            plt.plot(path_x, path_y, "-or")  # Path as red connected circles
+    
+        plt.xlim(0, self.width)
+        plt.ylim(0, self.height)
+        plt.title(title)
+        plt.xlabel("X [m]")
+        plt.ylabel("Y [m]")
+        plt.grid(True)
+        plt.axis("equal")    
+    
+    # Modify the plot_map method to include background image
+    def plot_slam_map(self, title, image_path=None, path=None):
+        # Read and display background image
+        bg_image = plt.imread(image_path)
+
         plt.imshow(bg_image, extent=[0, self.width, 0, self.height], origin='lower', cmap=plt.cm.gray)
         
         # # Plot obstacles
@@ -126,7 +174,12 @@ if __name__ == "__main__":
     # Create an instance of SlamGridMap
     map_instance = SlamGridMap(image_path=map_image_path)
 
+    map_instance.plot_map(title="Grid Map: map_hard")
+    plt.savefig("results/grid_map/map_slamgrid.png")
+
     # Plot the map
-    map_instance.plot_map(title="Image Based Grid Map with Obstacles")
-    # Optionally save the figure
-    plt.savefig("results/map_imagebasedgrid.png")
+    map_instance.plot_slam_map(title="Grid Map: map_hard", image_path=map_image_path)
+    plt.savefig("results/grid_map/map_slamgrid.png")
+
+    map_instance.plot_slam_map(title="Grid Map: map_hard", image_path=map_instance.map_edges_low_thres)
+    plt.savefig("results/grid_map/map_fixedgrid_map_hard.png")

@@ -59,5 +59,5 @@ if __name__ == "__main__":
     map_instance = RandomGridMap(width=100, height=80)
     map_instance.plot_map(title="Random Grid Map")
 
-    plt.savefig("results/map_randomgrid.png")
+    plt.savefig("results/grid_map/map_randomgrid.png")
     plt.show()

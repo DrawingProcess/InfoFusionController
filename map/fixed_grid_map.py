@@ -25,16 +25,16 @@ class FixedGridMap(GridMap):
             self.add_fixed_rectangle(42, 15, 48, 20)
             self.add_fixed_circle(33, 30, 4)
 
-    def add_config_obstacles(self, obstacles):
+    def add_config_obstacles(self, obstacles, is_dynamic=False):
         for obstacle in obstacles:
             if obstacle['type'] == 'rectangle':
                 # obstacle['coordinates'] is expected to be a list of four numbers [min_x, min_y, max_x, max_y]
                 coords = obstacle['coordinates']
-                self.add_fixed_rectangle(coords[0], coords[1], coords[2], coords[3])
+                self.add_fixed_rectangle(coords[0], coords[1], coords[2], coords[3], is_dynamic)
             elif obstacle['type'] == 'circle':
                 # obstacle['parameters'] is expected to be a list [center_x, center_y, radius]
                 params = obstacle['parameters']
-                self.add_fixed_circle(params[0], params[1], params[2])
+                self.add_fixed_circle(params[0], params[1], params[2], is_dynamic)
             else:
                 print(f"Unknown obstacle type: {obstacle['type']}")
 
@@ -50,11 +50,10 @@ class FixedGridMap(GridMap):
             for x, y in group:
                 if self.is_valid_position(x, y):
                     valid_points.append((x, y))
+                    self.obstacles.append((x, y))
                     self.grid[y][x] = 1
                     if is_dynamic:
                         self.obstacles_dynamic.append((x, y))
-                    else:
-                        self.obstacles.append((x, y))
         
         if not valid_points:
             return  # 유효한 좌표가 없으면 종료
@@ -66,12 +65,11 @@ class FixedGridMap(GridMap):
             ((min_x, min_y), (min_x, max_y)),  # Left line
             ((max_x, min_y), (max_x, max_y)),  # Right line
         ]
+        self.obstacle_lines.extend(box_lines)
         if is_dynamic:
             self.obstacle_lines_dynamic.extend(box_lines)
-        else:
-            self.obstacle_lines.extend(box_lines)
         
-    def add_fixed_circle(self, center_x, center_y, radius):
+    def add_fixed_circle(self, center_x, center_y, radius, is_dynamic=False):
         # Ensure the list exists to store circular obstacles
         if not hasattr(self, 'circular_obstacles'):
             self.circular_obstacles = []
@@ -168,6 +166,9 @@ if __name__ == "__main__":
         width = config.get('width', 50)
         height = config.get('height', 50)
         obstacles = config.get('obstacles', [])
+
+        import os
+        config_file = os.path.splitext(os.path.basename(args.conf))[0]
     else:
         # Use default parameters
         width = 50
@@ -175,6 +176,7 @@ if __name__ == "__main__":
         obstacles = None  # Will trigger default obstacles in the class
 
     map_instance = FixedGridMap(width=width, height=height, obstacles=obstacles)
-    map_instance.plot_map(title="Fixed Grid Map")
-    plt.savefig("results/map_fixedgrid.png")
+    config_file = "map_medium"
+    map_instance.plot_map(title=f"Grid Map: {config_file}")
+    plt.savefig(f"results/grid_map/map_fixedgrid_{config_file}.png")
     plt.show()

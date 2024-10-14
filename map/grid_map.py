@@ -200,5 +200,5 @@ if __name__ == "__main__":
     map_instance = GridMap(width=100, height=80)
     map_instance.plot_map(title="Base Grid Map")
 
-    plt.savefig("results/map_grid.png")
+    plt.savefig("results/grid_map/map_grid.png")
     plt.show()
