@@ -20,7 +20,7 @@ from route_planner.informed_trrt_star_planner import Pose, InformedTRRTStar
 
 def mutual_information(state1, state2):
     """Calculate Mutual Information between two states."""
-    mi_list = []
+    nmi_list = []
 
     min_len = min(len(state1), len(state2))
     state1 = state1[:min_len]
@@ -54,9 +54,20 @@ def mutual_information(state1, state2):
         
         # Calculate Mutual Information
         mi = entropy1 + entropy2 - joint_entropy
-        mi_list.append(mi)
+        
+        # Clip MI to avoid negative values
+        mi = max(0, mi)
+        
+        # Avoid dividing by zero in NMI
+        if entropy1 * entropy2 > 0:
+            # Normalize Mutual Information
+            nmi = mi / np.sqrt(entropy1 * entropy2)
+        else:
+            nmi = 0  # If entropies are 0, set NMI to 0
+            
+        nmi_list.append(nmi)
     
-    return np.array(mi_list)
+    return np.array(nmi_list)
 
 # 두 알고리즘의 상태를 결합하는 함수
 def combine_states(states_pursuit, states_mpc, mi):
@@ -66,7 +77,7 @@ def combine_states(states_pursuit, states_mpc, mi):
     
     # Mutual Information을 바탕으로 각 상태에 가중치를 부여하여 결합
     for i in range(4):  # [x, y, theta, velocity]
-        if mi[i] > 1.2:  # Mutual Information이 높을 때
+        if mi[i] > 7:  # Mutual Information이 높을 때
             weight2 = mi[i] / (mi[i] + 1) 
             weight1 = 1 - weight2
             combined_state[:, i] = weight1 * states_pursuit[:, i] + weight2 * states_mpc[:, i]
@@ -93,17 +104,20 @@ class InfoFusionController(BaseController):
 
         steering_angles = []
         accelations = []
+        mi_list = []
 
         # Initialize reference index
         ref_index = 0  # Start from the beginning of the trajectory
 
         # Follow the reference trajectory
         while True:
-            if self.is_goal_reached(current_state, goal_position, tolerance=5):
+            if self.is_goal_reached(current_state, goal_position, tolerance=2):
                 print("Final adjustment to reach the goal.")
                 current_state[0], current_state[1] = goal_position
                 current_state[2] = calculate_angle(current_state[0], current_state[1], goal_position[0], goal_position[1])
                 trajectory.append(current_state)
+
+                self.plot_mi(mi_list, accelations, self.dt)
                 break
 
             is_pursuit_reached = True
@@ -154,6 +168,7 @@ class InfoFusionController(BaseController):
 
             accelations.append(control_input[0])
             steering_angles.append(control_input[1])
+            mi_list.append(mi)
 
             current_state = next_states[1]
             trajectory.append(current_state)
@@ -169,6 +184,37 @@ class InfoFusionController(BaseController):
 
         print("Trajectory following completed.")
         return True, total_distance, np.array(trajectory), np.array(steering_angles), np.array(accelations)
+
+    def plot_mi(self, mi_list, accelations, dt, title="Mutual Information"):
+        """
+        Mutual Information을 이동한 거리에 따라 그래프를 그리는 함수.
+        mi_list는 각 스텝에서의 MI 값들이 저장된 리스트이고, 
+        accelations는 각 스텝의 가속도 값이며, dt는 시간 간격을 의미함.
+        """
+        # 거리 계산
+        velocity = 0
+        dist = np.zeros(len(accelations))
+        for t in range(1, len(accelations)):
+            print(f"t: {t}, accel: {accelations[t - 1]}, dt: {dt}")
+            velocity += accelations[t - 1] * dt  # 이전 스텝의 속도를 계산
+            dist[t] = dist[t - 1] + velocity * dt  # 각 스텝에서의 누적 거리 계산
+        dist = dist * 100 / dist[-1]  # Convert to percentage
+
+        # MI 데이터를 거리(progress)에 따라 그래프화
+        mi_list = np.array(mi_list)  # 미리 numpy 배열로 변환
+        plt.figure()
+
+        state = ["x", "y", "theta", "speed"]
+        colors = ["r-", "g-", "b-", "c-"]
+        for i in range(4):  # [x, y, theta, speed]에 대한 MI 플롯
+            plt.plot(dist, mi_list[:, i], colors[i], label=state[i])
+
+        plt.xlabel('Progress (%)')
+        plt.ylabel('Mutual Information (MI)')
+        plt.title(title)
+        plt.legend(loc="upper right")
+        plt.grid(True)
+        plt.savefig("results/test_controller/mi_vs_distance.png")  # 결과를 저장
 
 def main():
     parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")

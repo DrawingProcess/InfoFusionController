@@ -113,7 +113,7 @@ class MPCController(BaseController):
 
         # Follow the reference trajectory
         while True:
-            if self.is_goal_reached(current_state, goal_position):
+            if self.is_goal_reached(current_state, goal_position, tolerance=2):
                 print("Final adjustment to reach the goal.")
                 current_state[0], current_state[1] = goal_position
                 current_state[2] = calculate_angle(current_state[0], current_state[1], goal_position[0], goal_position[1])
@@ -223,7 +223,7 @@ def main():
 
     # Follow the trajectory using the MPC controller
     goal_position = [goal_pose.x, goal_pose.y]
-    is_reached, trajectory_distance, trajectory, steering_angles, accelations  = controller.follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=True)
+    is_reached, trajectory_distance, trajectory, steering_angles, accelations = controller.follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=True)
     
     if is_reached:
         print("Plotting the final trajectory.")

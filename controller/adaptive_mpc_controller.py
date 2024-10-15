@@ -22,10 +22,11 @@ class AdaptiveMPCController(MPCController):
     def update_horizon(self, current_state, ref_trajectory):
         # Update horizon dynamically based on deviation
         deviation = np.linalg.norm(current_state[:2] - ref_trajectory[0][:2])
-        if deviation > 5:
-            self.horizon = min(self.horizon + 1, 20)
-        else:
-            self.horizon = max(self.horizon - 1, 5)
+        if deviation > 10:
+            self.horizon = min(self.horizon + 2, 20)
+        elif deviation < 2:
+            self.horizon = max(self.horizon - 2, 5)
+
 
     def follow_trajectory(self, start_pose, ref_trajectory, goal_position, show_process=False):
         # Initialize the state and trajectory
@@ -41,7 +42,7 @@ class AdaptiveMPCController(MPCController):
 
         # Follow the reference trajectory
         while True:
-            if self.is_goal_reached(current_state, goal_position):
+            if self.is_goal_reached(current_state, goal_position, tolerance=2):
                 print("Final adjustment to reach the goal.")
                 current_state[0], current_state[1] = goal_position
                 current_state[2] = calculate_angle(current_state[0], current_state[1], goal_position[0], goal_position[1])
@@ -73,13 +74,6 @@ class AdaptiveMPCController(MPCController):
                 plt.plot(ref_segment[:, 0], ref_segment[:, 1], "g--")
                 plt.plot(current_state[0], current_state[1], "xr")
                 plt.pause(0.001)
-
-        # If the goal almost reached, adjust the final position
-        if self.is_goal_reached(current_state, goal_position, tolerance=5):
-            print("Final adjustment to reach the goal.")
-            current_state[0], current_state[1] = goal_position
-            current_state[2] = calculate_angle(current_state[0], current_state[1], goal_position[0], goal_position[1])
-            trajectory.append(current_state)
 
         total_distance = calculate_trajectory_distance(trajectory)
 
@@ -167,7 +161,7 @@ def main():
     if is_reached:
         print("Plotting the final trajectory.")
         print(f"Total distance covered: {trajectory_distance}")
-        plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label="MPC Path")
+        plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label="Adaptive MPC Path")
         plt.legend()
         plt.show()
 

@@ -75,7 +75,7 @@ class MPCMIController(MPCController):
         ref_index = 0  # Start from the beginning of the trajectory
 
         while True:
-            if self.is_goal_reached(current_state, goal_position, tolerance=5):
+            if self.is_goal_reached(current_state, goal_position, tolerance=2):
                 print("Final adjustment to reach the goal.")
                 current_state[0], current_state[1] = goal_position
                 current_state[2] = calculate_angle(current_state[0], current_state[1], goal_position[0], goal_position[1])

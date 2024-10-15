@@ -321,12 +321,12 @@ def main():
     controller = BaseController(dt, wheelbase, map_instance)
 
     goal_position = [goal_pose.x, goal_pose.y]
-    is_reached, trajectory_distance, trajectory = controller.follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=True)
+    is_reached, trajectory_distance, trajectory, steering_angles, accelations = controller.follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=True)
     
     if is_reached:
         print("Plotting the final trajectory.")
         print(f"Total distance covered: {trajectory_distance}")
-        plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label="MPC Path")
+        plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label="Base Controller Path")
         plt.legend()
         plt.show()
 
