@@ -120,7 +120,7 @@ def main():
     else:
         plt.plot(route_trajectory[:, 0], route_trajectory[:, 1], "-r", label="Planned Path")
 
-        plt.legend()
+        plt.legend(fontsize=14)
         plt.pause(0.001)
         plt.show()
 

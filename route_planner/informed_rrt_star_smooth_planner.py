@@ -97,7 +97,7 @@ def main():
         # Plot Optimized Path
         plt.plot(route_trajectory_opt[:, 0], route_trajectory_opt[:, 1], "-r", label="Optimized Path")  # Red solid line
 
-        plt.legend()
+        plt.legend(fontsize=14)
         plt.pause(0.001)
         plt.show()
 
