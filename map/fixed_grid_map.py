@@ -147,9 +147,13 @@ class FixedGridMap(GridMap):
 
         plt.xlim(-1, self.width + 1)
         plt.ylim(-1, self.height + 1)
-        plt.title(title)
-        plt.xlabel("X [m]")
-        plt.ylabel("Y [m]")
+        plt.title(title, fontsize=20)
+        plt.xticks(fontsize=14)
+        plt.yticks(fontsize=14)
+        plt.xlabel("X [m]", fontsize=16)
+        plt.ylabel("Y [m]", fontsize=16)
+        # plt.legend(fontsize=15)
+
         plt.grid(True)
         plt.axis("equal")
 
@@ -176,7 +180,7 @@ if __name__ == "__main__":
         obstacles = None  # Will trigger default obstacles in the class
 
     map_instance = FixedGridMap(width=width, height=height, obstacles=obstacles)
-    config_file = "map_medium"
+    config_file = "map_easy"
     map_instance.plot_map(title=f"Grid Map: {config_file}")
     plt.savefig(f"results/grid_map/map_fixedgrid_{config_file}.png")
     plt.show()

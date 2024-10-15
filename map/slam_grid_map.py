@@ -74,7 +74,7 @@ class SlamGridMap(FixedGridMap):
     # Modify the plot_map method to include background image
     def plot_map(self, title, path=None):
         # Read and display background image
-        bg_image = plt.imread(self.image_path)
+        bg_image = plt.imread(self.map_edges_low_thres)
 
         plt.imshow(bg_image, extent=[0, self.width, 0, self.height], origin='lower', cmap=plt.cm.gray)
         
@@ -110,12 +110,16 @@ class SlamGridMap(FixedGridMap):
             path_x = [x for x, y in path]
             path_y = [y for x, y in path]
             plt.plot(path_x, path_y, "-or")  # Path as red connected circles
-    
-        plt.xlim(0, self.width)
-        plt.ylim(0, self.height)
-        plt.title(title)
-        plt.xlabel("X [m]")
-        plt.ylabel("Y [m]")
+
+        plt.xlim(-1, self.width + 1)
+        plt.ylim(-1, self.height + 1)
+        plt.title(title, fontsize=20)
+        plt.xticks(fontsize=14)
+        plt.yticks(fontsize=14)
+        plt.xlabel("X [m]", fontsize=16)
+        plt.ylabel("Y [m]", fontsize=16)
+        # plt.legend(fontsize=15)  
+
         plt.grid(True)
         plt.axis("equal")    
     
@@ -159,11 +163,15 @@ class SlamGridMap(FixedGridMap):
             path_y = [y for x, y in path]
             plt.plot(path_x, path_y, "-or")  # Path as red connected circles
     
-        plt.xlim(0, self.width)
-        plt.ylim(0, self.height)
-        plt.title(title)
-        plt.xlabel("X [m]")
-        plt.ylabel("Y [m]")
+        plt.xlim(-1, self.width + 1)
+        plt.ylim(-1, self.height + 1)
+        plt.title(title, fontsize=20)
+        plt.xticks(fontsize=14)
+        plt.yticks(fontsize=14)
+        plt.xlabel("X [m]", fontsize=16)
+        plt.ylabel("Y [m]", fontsize=16)
+        # plt.legend(fontsize=15)  
+
         plt.grid(True)
         plt.axis("equal")
 
