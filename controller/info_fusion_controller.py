@@ -56,12 +56,12 @@ def mutual_information(state1, state2):
         mi = entropy1 + entropy2 - joint_entropy
         
         # Clip MI to avoid negative values
-        mi = max(0, mi)
+        nmi = max(0, mi)
         
         # Avoid dividing by zero in NMI
         if entropy1 * entropy2 > 0:
             # Normalize Mutual Information
-            nmi = mi / np.sqrt(entropy1 * entropy2)
+            nmi = nmi / np.sqrt(entropy1 * entropy2)
         else:
             nmi = 0  # If entropies are 0, set NMI to 0
             
@@ -77,7 +77,7 @@ def combine_states(states_pursuit, states_mpc, mi):
     
     # Mutual Information을 바탕으로 각 상태에 가중치를 부여하여 결합
     for i in range(4):  # [x, y, theta, velocity]
-        if mi[i] > 7:  # Mutual Information이 높을 때
+        if mi[i] > 0.85:  # Mutual Information이 높을 때
             weight2 = mi[i] / (mi[i] + 1) 
             weight1 = 1 - weight2
             combined_state[:, i] = weight1 * states_pursuit[:, i] + weight2 * states_mpc[:, i]
@@ -195,7 +195,7 @@ class InfoFusionController(BaseController):
         velocity = 0
         dist = np.zeros(len(accelations))
         for t in range(1, len(accelations)):
-            print(f"t: {t}, accel: {accelations[t - 1]}, dt: {dt}")
+            # print(f"t: {t}, accel: {accelations[t - 1]}, dt: {dt}")
             velocity += accelations[t - 1] * dt  # 이전 스텝의 속도를 계산
             dist[t] = dist[t - 1] + velocity * dt  # 각 스텝에서의 누적 거리 계산
         dist = dist * 100 / dist[-1]  # Convert to percentage
@@ -209,10 +209,10 @@ class InfoFusionController(BaseController):
         for i in range(4):  # [x, y, theta, speed]에 대한 MI 플롯
             plt.plot(dist, mi_list[:, i], colors[i], label=state[i])
 
-        plt.xlabel('Progress (%)')
-        plt.ylabel('Mutual Information (MI)')
-        plt.title(title)
-        plt.legend(loc="upper right")
+        plt.xlabel('Progress (%)', fontsize=16)
+        plt.ylabel('Mutual Information (MI)', fontsize=16)
+        plt.title(title, fontsize=20)
+        plt.legend(loc="upper left", fontsize=14)
         plt.grid(True)
         plt.savefig("results/test_controller/mi_vs_distance.png")  # 결과를 저장
 
@@ -285,7 +285,7 @@ def main():
         print("Plotting the final trajectory.")
         print(f"Total distance covered: {trajectory_distance}")
         plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label="MPC Path")
-        plt.legend()
+        plt.legend(fontsize=14)
         plt.show()
 
 if __name__ == "__main__":

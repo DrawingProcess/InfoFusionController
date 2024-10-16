@@ -162,7 +162,7 @@ def main():
         print("Plotting the final trajectory.")
         print(f"Total distance covered: {trajectory_distance}")
         plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label="Adaptive MPC Path")
-        plt.legend()
+        plt.legend(fontsize=14)
         plt.show()
 
 if __name__ == "__main__":

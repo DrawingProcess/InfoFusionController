@@ -121,7 +121,7 @@ def main():
                     trajectory_data[name][count] = result[3]
                     config['route_trajectory'][name][count] = result[3].tolist()
                     plt.plot(result[3][:, 0], result[3][:, 1], "-r", label=name)  # Red solid line
-                plt.legend(loc="upper left")
+                plt.legend(loc="upper left", fontsize=14)
                 plt.savefig(os.path.join(args.output_dir, f"route_{name}_{count}.png"))
 
             count += 1
@@ -137,16 +137,14 @@ def main():
     with open(os.path.join(args.output_dir, 'config.json'), 'w') as f:
         json.dump(config, f, indent=4)
 
-    # 성능 결과 정렬 및 출력
-    sorted_performs = sorted(performance_results.items(), key=lambda x: x[1])
-    for name, time_taken in sorted_performs:
-        print(f"{name}: {time_taken:.6f} 초 (평균)")
-    sorted_dists = sorted(distance_results.items(), key=lambda x: x[1])
-    for name, dist in sorted_dists:
-        print(f"{name}: {dist:.6f} m (평균)")
+    # 성능 결과 및 거리 결과 정렬 없이 사용
+    for name, time_taken in performance_results.items():
+        print(f"{name}: {time_taken:.6f} seconds (average)")
+    for name, dist in distance_results.items():
+        print(f"{name}: {dist:.6f} meters (average)")
 
     # Plot the two charts side-by-side
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 6))  # 1 row, 2 columns
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 6))  # 1 row, 3 columns
 
     # Failure Counts Plot
     algorithm_names = list(fail_counts.keys())
@@ -157,39 +155,30 @@ def main():
     ax1.set_title(f"Algorithm Pathfinding Failure Counts ({num_trajectories} Runs)")
     ax1.grid(True)
 
-    # Save Fail Counts to txt file
-    with open(os.path.join(args.output_dir, "fail_counts.txt"), "w") as f:
-        f.write("Algorithm\tFail Count\n")
-        for name, count in fail_counts.items():
-            f.write(f"{name}\t{count}\n")
-    
-    # Performance Results Plot
-    algorithm_names = [result[0] for result in sorted_performs]
-    times = [result[1] for result in sorted_performs]
+    # 성능 결과 그래프
+    algorithm_names = list(performance_results.keys())
+    times = list(performance_results.values())
     ax2.barh(algorithm_names, times, color='skyblue')
     ax2.set_xlabel("Average Execution Time (seconds)")
     ax2.set_title(f"Algorithm Performance Comparison ({num_trajectories} Runs)")
     ax2.grid(True)
 
-    # Save Performance Results to txt file
-    with open(os.path.join(args.output_dir, "performance_results.txt"), "w") as f:
-        f.write("Algorithm\tAverage Execution Time (seconds)\n")
-        for name, t in sorted_performs:
-            f.write(f"{name}\t{t}\n")
-    
-    # Performance Results Plot
-    algorithm_names = [result[0] for result in sorted_dists]
-    dists = [result[1] for result in sorted_dists]
+    # 경로 거리 결과 그래프
+    algorithm_names = list(distance_results.keys())
+    dists = list(distance_results.values())
     ax3.barh(algorithm_names, dists, color='purple')
     ax3.set_xlabel("Average Trajectory Distance (m)")
-    ax3.set_title(f"Algorithm Performance Comparison ({num_trajectories} Runs)")
+    ax3.set_title(f"Algorithm Trajectory Distance Comparison ({num_trajectories} Runs)")
     ax3.grid(True)
 
-    # Save Distance Results to txt file
-    with open(os.path.join(args.output_dir, "distance_results.txt"), "w") as f:
-        f.write("Algorithm\tAverage Trajectory Distance (m)\n")
-        for name, dist in sorted_dists:
-            f.write(f"{name}\t{dist}\n")
+    # 결과를 하나의 txt 파일로 저장
+    with open(os.path.join(args.output_dir, "combined_results.txt"), "w") as f:
+        f.write("Algorithm\tFail Count\tAverage Execution Time (seconds)\tAverage Trajectory Distance (m)\n")
+        for name in fail_counts.keys():
+            fail_count = fail_counts.get(name, 0)
+            time_taken = performance_results.get(name, 0)
+            dist = distance_results.get(name, 0)
+            f.write(f"{name}\t{fail_count}\t{time_taken:.6f}\t{dist:.6f}\n")
 
     # Adjust layout and show plot
     plt.tight_layout()  # Ensure there's enough space between the plots
@@ -205,7 +194,7 @@ def main():
         for j, name in enumerate(algorithms.keys()):
             if trajectory_data[name].get(i) is not None:
                 plt.plot(trajectory_data[name][i][:, 0], trajectory_data[name][i][:, 1], colors[j], label=name)
-        plt.legend(loc="upper left")
+        plt.legend(loc="upper left", fontsize=14)
         plt.savefig(os.path.join(args.output_dir, f"compare_route_trajectory_{i}.png"))
         plt.close()
 

@@ -113,7 +113,7 @@ def main():
             plt.plot(start_pose.x, start_pose.y, "og")
             plt.plot(goal_pose.x, goal_pose.y, "xb")
             plt.plot(route_trajectory_opt[:, 0], route_trajectory_opt[:, 1], "-r", label="Informed TRRT Path")  # Red solid line
-            plt.legend(loc="upper left")
+            plt.legend(loc="upper left", fontsize=14)
             plt.savefig(os.path.join(args.output_dir, f"route_{count}.png"))
 
             route_trajectorys.append(route_trajectory)
@@ -139,7 +139,7 @@ def main():
     plt.plot(start_pose.x, start_pose.y, "og")
     plt.plot(goal_pose.x, goal_pose.y, "xb")
     plt.plot(np.array(route_trajectory_opts[0])[:, 0], np.array(route_trajectory_opts[0])[:, 1], "-r", label="Informed TRRT Path")  # Red solid line
-    plt.legend(loc="upper left")
+    plt.legend(loc="upper left", fontsize=14)
     plt.savefig(os.path.join(args.output_dir, "route_trajectory.png"))
 
     # Save updated configuration
@@ -152,11 +152,11 @@ def main():
     wheelbase = 2.5  # Example wheelbase of the vehicle in meters
     goal_position = [goal_pose.x, goal_pose.y]
     algorithms = {
-        'pure_pursuit': lambda: PurePursuitController(lookahead_distance=5.0, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
+        'adaptive_mpc': lambda: AdaptiveMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
             .follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
         'mpc_basic': lambda: MPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
             .follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
-        'adaptive_mpc': lambda: AdaptiveMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
+        'pure_pursuit': lambda: PurePursuitController(lookahead_distance=5.0, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
             .follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
         'weighted_fusion': lambda: WeightedFusionController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
             .follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
@@ -208,7 +208,7 @@ def main():
             plt.plot(goal_pose.x, goal_pose.y, "xb")
             plt.plot(np.array(route_trajectory_opts[count])[:, 0], np.array(route_trajectory_opts[count])[:, 1], "-r", label="Informed TRRT Path")  # Red solid line
             plt.plot(trajectory[:, 0], trajectory[:, 1], "b-", label=name)
-            plt.legend(loc="upper left")
+            plt.legend(loc="upper left", fontsize=14)
             plt.savefig(os.path.join(args.output_dir, f"controller_{name}_{count}.png"))
             
             count += 1
@@ -220,21 +220,19 @@ def main():
             print(f"{name}: {performance_results[name]:.6f} seconds (average)")
             print(f"{name}: {distance_results[name]:.6f} meters (average)")
 
-    # Sort and display performance results
-    sorted_performs = sorted(performance_results.items(), key=lambda x: x[1])
-    for name, time_taken in sorted_performs:
+    # 성능 결과 및 거리 결과 정렬 없이 사용
+    for name, time_taken in performance_results.items():
         print(f"{name}: {time_taken:.6f} seconds (average)")
-    sorted_dists = sorted(distance_results.items(), key=lambda x: x[1])
-    for name, dist in sorted_dists:
+    for name, dist in distance_results.items():
         print(f"{name}: {dist:.6f} meters (average)")
-
+    
     # Ensure performance directory exists
     performance_dir = os.path.join(args.output_dir, "performance")
     os.makedirs(performance_dir, exist_ok=True)
 
-    # Plot results
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 6))
-    
+    # Plot the two charts side-by-side
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 6))  # 1 row, 3 columns
+
     # Failure Counts Plot
     algorithm_names = list(fail_counts.keys())
     fail_values = list(fail_counts.values())
@@ -243,40 +241,31 @@ def main():
     ax1.set_ylabel("Algorithm")
     ax1.set_title(f"Algorithm Pathfinding Failure Counts ({num_trajectories} Runs)")
     ax1.grid(True)
-    
-    # Save Fail Counts to txt file
-    with open(os.path.join(performance_dir, "fail_counts.txt"), "w") as f:
-        f.write("Algorithm\tFail Count\n")
-        for name, count in fail_counts.items():
-            f.write(f"{name}\t{count}\n")
-    
-    # Performance Results Plot
-    algorithm_names = [result[0] for result in sorted_performs]
-    times = [result[1] for result in sorted_performs]
+
+    # 성능 결과 그래프
+    algorithm_names = list(performance_results.keys())
+    times = list(performance_results.values())
     ax2.barh(algorithm_names, times, color='skyblue')
     ax2.set_xlabel("Average Execution Time (seconds)")
     ax2.set_title(f"Algorithm Performance Comparison ({num_trajectories} Runs)")
     ax2.grid(True)
-    
-    # Save Performance Results to txt file
-    with open(os.path.join(performance_dir, "performance_results.txt"), "w") as f:
-        f.write("Algorithm\tAverage Execution Time (seconds)\n")
-        for name, t in sorted_performs:
-            f.write(f"{name}\t{t}\n")
-    
-    # Distance Results Plot
-    algorithm_names = [result[0] for result in sorted_dists]
-    dists = [result[1] for result in sorted_dists]
+
+    # 경로 거리 결과 그래프
+    algorithm_names = list(distance_results.keys())
+    dists = list(distance_results.values())
     ax3.barh(algorithm_names, dists, color='purple')
     ax3.set_xlabel("Average Trajectory Distance (m)")
     ax3.set_title(f"Algorithm Trajectory Distance Comparison ({num_trajectories} Runs)")
     ax3.grid(True)
-    
-    # Save Distance Results to txt file
-    with open(os.path.join(performance_dir, "distance_results.txt"), "w") as f:
-        f.write("Algorithm\tAverage Trajectory Distance (m)\n")
-        for name, dist in sorted_dists:
-            f.write(f"{name}\t{dist}\n")
+
+    # 결과를 하나의 txt 파일로 저장
+    with open(os.path.join(args.output_dir, "combined_results.txt"), "w") as f:
+        f.write("Algorithm\tFail Count\tAverage Execution Time (seconds)\tAverage Trajectory Distance (m)\n")
+        for name in fail_counts.keys():
+            fail_count = fail_counts.get(name, 0)
+            time_taken = performance_results.get(name, 0)
+            dist = distance_results.get(name, 0)
+            f.write(f"{name}\t{fail_count}\t{time_taken:.6f}\t{dist:.6f}\n")
     
     # Adjust layout and save plot
     plt.tight_layout()
@@ -297,7 +286,7 @@ def main():
                 trajectory = trajectory_data[name][i]
                 np.savetxt(os.path.join(args.output_dir, f"trajectory_{name}_{i}.txt"), trajectory, header="x\ty", comments='')
     
-        plt.legend(loc="upper left")
+        plt.legend(loc="upper left", fontsize=14)
         plt.savefig(os.path.join(args.output_dir, f"compare_controller_trajectory_{i}.png"))
         plt.close()
     
@@ -323,10 +312,10 @@ def main():
                 data = np.column_stack((dist, np.degrees(steering_angles)))
                 np.savetxt(os.path.join(performance_dir, f"steering_angles_{name}_{i}.txt"), data, header="Progress (%)\tSteering Angle (degrees)", comments='')
     
-        plt.legend(loc="upper left")
-        plt.title(f"Compare Controller Steering Angle")
-        plt.xlabel("Progress (%)")
-        plt.ylabel("Steering Angle (degree)")
+        plt.legend(loc="upper left", fontsize=14)
+        plt.title(f"Compare Controller Steering Angle", fontsize=20)
+        plt.xlabel("Progress (%)", fontsize=16)
+        plt.ylabel("Steering Angle (degree)", fontsize=16)
         plt.savefig(os.path.join(performance_dir, f"compare_controller_steering_angle_{i}.png"))
         plt.close()
     
@@ -351,10 +340,10 @@ def main():
                 data = np.column_stack((dist, accelations))
                 np.savetxt(os.path.join(performance_dir, f"accelerations_{name}_{i}.txt"), data, header="Progress (%)\tAcceleration (m/s^2)", comments='')
     
-        plt.legend(loc="upper left")
-        plt.title(f"Compare Controller Acceleration")
-        plt.xlabel("Progress (%)")
-        plt.ylabel("Acceleration (m/s^2)")
+        plt.legend(loc="upper left", fontsize=14)
+        plt.title(f"Compare Controller Acceleration", fontsize=20)
+        plt.xlabel("Progress (%)", fontsize=16)
+        plt.ylabel("Acceleration (m/s^2)", fontsize=16)
         plt.savefig(os.path.join(performance_dir, f"compare_controller_acceleration_{i}.png"))
         plt.close()
     
@@ -365,9 +354,9 @@ def main():
                 plt.figure()
                 angles = np.array(steering_angles_data[name][i]).astype(float)
                 plt.hist(angles, bins=30, alpha=0.7, color='green')
-                plt.title(f"Steering Angle Histogram: {name}")
-                plt.xlabel("Steering Angle (radians)")
-                plt.ylabel("Frequency")
+                plt.title(f"Steering Angle Histogram: {name}", fontsize=20)
+                plt.xlabel("Steering Angle (radians)", fontsize=16)
+                plt.ylabel("Frequency", fontsize=16)
                 plt.savefig(os.path.join(performance_dir, f"steering_histogram_{name}_{i}.png"))
                 plt.close()
     
@@ -392,10 +381,10 @@ def main():
                 data = np.column_stack((time_steps, np.degrees(steering_angles)))
                 np.savetxt(os.path.join(performance_dir, f"steering_angle_over_time_{name}_{i}.txt"), data, header="Time (s)\tSteering Angle (degrees)", comments='')
     
-                plt.title(f"Steering Angle over Time: {name}")
-                plt.xlabel("Time (s)")
-                plt.ylabel("Steering Angle (degree)")
-                plt.legend()
+                plt.title(f"Steering Angle over Time: {name}", fontsize=20)
+                plt.xlabel("Time (s)", fontsize=16)
+                plt.ylabel("Steering Angle (degree)", fontsize=16)
+                plt.legend(fontsize=14)
                 plt.savefig(os.path.join(performance_dir, f"steering_angle_over_time_{name}_{i}.png"))
                 plt.close()
     
@@ -413,10 +402,10 @@ def main():
                 data = np.column_stack((time_steps, accelations))
                 np.savetxt(os.path.join(performance_dir, f"acceleration_over_time_{name}_{i}.txt"), data, header="Time (s)\tAcceleration (m/s^2)", comments='')
     
-                plt.title(f"Acceleration over Time: {name}")
-                plt.xlabel("Time (s)")
-                plt.ylabel("Acceleration (m/s^2)")
-                plt.legend()
+                plt.title(f"Acceleration over Time: {name}", fontsize=20)
+                plt.xlabel("Time (s)", fontsize=16)
+                plt.ylabel("Acceleration (m/s^2)", fontsize=16)
+                plt.legend(fontsize=14)
                 plt.savefig(os.path.join(performance_dir, f"acceleration_over_time_{name}_{i}.png"))
                 plt.close()
     
