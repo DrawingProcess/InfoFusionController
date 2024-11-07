@@ -22,29 +22,24 @@ class BaseController:
         x, y, theta, v = current_state
         x_next, y_next, theta_next, v_next = next_state
 
-        # 원하는 속도 계산
         a_ref = (v_next - v) / self.dt
 
-        # 다음 상태로의 위치 변화량 계산
         dx = x_next - x
         dy = y_next - y
         distance = np.hypot(dx, dy)
 
-        # 원하는 진행 방향 계산
         desired_theta = np.arctan2(dy, dx)
 
-        # 진행 방향 오차 계산
         theta_error = desired_theta - theta
-        theta_error = np.arctan2(np.sin(theta_error), np.cos(theta_error))  # [-pi, pi] 범위로 정규화
+        theta_error = np.arctan2(np.sin(theta_error), np.cos(theta_error))  # [-pi, pi] range normalization
 
-        # 스티어링 각도 계산
-        if distance > 0.001:  # 0으로 나누는 것을 방지
+        if distance > 0.001:  # Avoid division by zero
             delta_ref = np.arctan2(2 * self.wheelbase * np.sin(theta_error), distance)
         else:
             delta_ref = 0.0
 
-        # 스티어링 각도 제한 적용
-        max_steering_angle = np.radians(30)  # 최대 스티어링 각도 (라디안)
+        # Clip the steering angle to the maximum steering angle
+        max_steering_angle = np.radians(30) 
         delta_ref = np.clip(delta_ref, -max_steering_angle, max_steering_angle)
 
         return a_ref, delta_ref
@@ -70,33 +65,32 @@ class BaseController:
         return True
     
     def avoid_obstacle(self, current_state, target_state):
-        # 현재 위치와 목표 지점의 좌표를 추출
+        # extract x, y coordinates from current_state and target_state
         current_xy = np.array(current_state[:2])
         target_xy = np.array(target_state[:2])
 
-        # 목표 지점으로 향하는 방향 벡터 계산
+        # calculate the direction vector from current_state to target_state
         direction_vector = target_xy - current_xy
-        direction_vector = direction_vector / np.linalg.norm(direction_vector)  # 단위 벡터로 정규화
+        direction_vector = direction_vector / np.linalg.norm(direction_vector)
 
-        # 방향 벡터의 좌우 수직 벡터 계산 (장애물 회피를 위한 후보 방향)
-        perpendicular_vector1 = np.array([-direction_vector[1], direction_vector[0]])  # 90도 반시계 방향 회전
-        perpendicular_vector2 = np.array([direction_vector[1], -direction_vector[0]])  # 90도 시계 방향 회전
+        # calculate two perpendicular vectors to the direction vector
+        perpendicular_vector1 = np.array([-direction_vector[1], direction_vector[0]])
+        perpendicular_vector2 = np.array([direction_vector[1], -direction_vector[0]])
 
-        # 장애물 회피를 위한 거리 설정
-        adjustment_distances = [0.5, 1.0, 2.0, 4.0, 6.0]  # 두 개의 다른 거리로 조정
 
-        # 네 가지 회피 경로 생성
+        # generate adjusted_targets by adding the perpendicular vectors to the target_state
+        adjustment_distances = [0.5, 1.0, 2.0, 4.0, 6.0]
         adjusted_targets = []
         for dist in adjustment_distances:
             adjusted_targets.append(target_xy + perpendicular_vector1 * dist)
             adjusted_targets.append(target_xy + perpendicular_vector2 * dist)
 
-        # 각 adjusted_targets에 기존 target_state의 theta와 velocity를 유지하면서 좌표를 업데이트
+        # convert adjusted_targets to adjusted_states by adding theta and velocity
         adjusted_states = []
         for adjusted_target in adjusted_targets:
             x, y = adjusted_target
-            theta = target_state[2]  # 기존 target_state의 theta 유지
-            velocity = target_state[3]  # 기존 target_state의 velocity 유지
+            theta = target_state[2]  
+            velocity = target_state[3]
             new_state = [x, y, theta, velocity]
             adjusted_states.append(new_state)
 
@@ -139,14 +133,13 @@ class BaseController:
                 min_distance = distance
                 target_index = i
 
-        # target_index가 경로의 끝을 초과하지 않도록 마지막 지점을 선택
         if target_index >= len(ref_trajectory):
             target_point = ref_trajectory[-1]
         else:
             target_point = ref_trajectory[target_index]
 
-        # target_point를 target_state로 변환 (theta와 velocity 추가)
-        velocity = state[3] if len(state) > 3 else 0.0  # 속도가 없을 경우 기본값 0.0 사용
+        # Extract the target state from the target point
+        velocity = state[3] if len(state) > 3 else 0.0 
         target_state = [target_point[0], target_point[1], theta, velocity]
 
         return target_state
@@ -244,7 +237,6 @@ class BaseController:
             current_state = next_state
             trajectory.append(current_state)
 
-            # 스티어링 각도와 속도 저장
             accelations.append(control_input[0])
             steering_angles.append(control_input[1])
 

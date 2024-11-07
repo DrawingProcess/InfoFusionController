@@ -18,7 +18,6 @@ from route_planner.informed_rrt_star_planner import InformedRRTStar
 from route_planner.informed_rrt_star_smooth_planner import InformedRRTSmoothStar
 from route_planner.informed_trrt_star_planner import InformedTRRTStar
 
-# 메인 함수
 def main():
     parser = argparse.ArgumentParser(description="Adaptive MPC Route Planner with configurable map, route planner, and controller.")
     parser.add_argument('--map', type=str, default='fixed_grid', choices=['parking_lot', 'fixed_grid', 'random_grid', 'image_grid'], help='Choose the map type.')
@@ -62,12 +61,12 @@ def main():
         goal_pose = map_instance.get_random_valid_goal_position()
     print(f"Start planning (start {start_pose.x, start_pose.y}, end {goal_pose.x, goal_pose.y})")
 
-    # show_process 변수로 show_process와 show_eclipse 제어
+    # Control show_process and show_eclipse with the show_process variable
     show_process = args.show_process
 
     num_trajectories = 5
 
-    # 성능 테스트를 위한 알고리즘 함수들
+    # Route planner selection using dictionary
     algorithms = {
         "A*": lambda: AStarRoutePlanner(start_pose, goal_pose, map_instance).search_route(show_process),
         "Theta*": lambda: ThetaStar(start_pose, goal_pose, map_instance).search_route(show_process),
@@ -79,7 +78,7 @@ def main():
     }
     config["route_trajectory"] = {name: {} for name in algorithms}
 
-    # 각 알고리즘의 성능 측정 및 실패 여부 확인
+    # performance results
     performance_results = {}
     distance_results = {}
     fail_counts = {name: 0 for name in algorithms}
@@ -90,16 +89,16 @@ def main():
         total_time = 0.0
         total_dist = 0.0
         while (count < num_trajectories):
-            plt.clf()  # 각 알고리즘 실행 전 플롯 초기화
+            plt.clf()  # Clear the plot
             if show_process:
                 map_instance.plot_map(title=f"{name} Route Planner")
                 plt.plot(start_pose.x, start_pose.y, "og")
                 plt.plot(goal_pose.x, goal_pose.y, "xb")
             
-            start_time = time.time()  # 시작 시간
+            start_time = time.time()  # start time
             result = func()
-            end_time = time.time()    # 종료 시간
-            time_taken = end_time - start_time  # 실행 시간 계산
+            end_time = time.time()    # finish time
+            time_taken = end_time - start_time  # Calculate time taken
 
             if not result[0]:  # if not isReached
                 fail_counts[name] += 1
@@ -108,7 +107,7 @@ def main():
                 total_dist += result[1]
 
             if result[0]:
-                plt.clf()  # 각 알고리즘 실행 전 플롯 초기화
+                plt.clf()  
                 map_instance.plot_map(title=f"{name} Route Planner")
                 plt.plot(start_pose.x, start_pose.y, "og")
                 plt.plot(goal_pose.x, goal_pose.y, "xb")
@@ -137,7 +136,7 @@ def main():
     with open(os.path.join(args.output_dir, 'config.json'), 'w') as f:
         json.dump(config, f, indent=4)
 
-    # 성능 결과 및 거리 결과 정렬 없이 사용
+    # Print the results
     for name, time_taken in performance_results.items():
         print(f"{name}: {time_taken:.6f} seconds (average)")
     for name, dist in distance_results.items():
@@ -155,7 +154,7 @@ def main():
     ax1.set_title(f"Algorithm Pathfinding Failure Counts ({num_trajectories} Runs)")
     ax1.grid(True)
 
-    # 성능 결과 그래프
+    # performance results graph
     algorithm_names = list(performance_results.keys())
     times = list(performance_results.values())
     ax2.barh(algorithm_names, times, color='skyblue')
@@ -163,7 +162,7 @@ def main():
     ax2.set_title(f"Algorithm Performance Comparison ({num_trajectories} Runs)")
     ax2.grid(True)
 
-    # 경로 거리 결과 그래프
+    # average trajectory distance graph
     algorithm_names = list(distance_results.keys())
     dists = list(distance_results.values())
     ax3.barh(algorithm_names, dists, color='purple')
@@ -171,7 +170,7 @@ def main():
     ax3.set_title(f"Algorithm Trajectory Distance Comparison ({num_trajectories} Runs)")
     ax3.grid(True)
 
-    # 결과를 하나의 txt 파일로 저장
+    # Save the combined results to a text file
     with open(os.path.join(args.output_dir, "combined_results.txt"), "w") as f:
         f.write("Algorithm\tFail Count\tAverage Execution Time (seconds)\tAverage Trajectory Distance (m)\n")
         for name in fail_counts.keys():

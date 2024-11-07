@@ -220,7 +220,6 @@ def main():
             print(f"{name}: {performance_results[name]:.6f} seconds (average)")
             print(f"{name}: {distance_results[name]:.6f} meters (average)")
 
-    # 성능 결과 및 거리 결과 정렬 없이 사용
     for name, time_taken in performance_results.items():
         print(f"{name}: {time_taken:.6f} seconds (average)")
     for name, dist in distance_results.items():
@@ -242,7 +241,7 @@ def main():
     ax1.set_title(f"Algorithm Pathfinding Failure Counts ({num_trajectories} Runs)")
     ax1.grid(True)
 
-    # 성능 결과 그래프
+    # performance results graph
     algorithm_names = list(performance_results.keys())
     times = list(performance_results.values())
     ax2.barh(algorithm_names, times, color='skyblue')
@@ -250,7 +249,7 @@ def main():
     ax2.set_title(f"Algorithm Performance Comparison ({num_trajectories} Runs)")
     ax2.grid(True)
 
-    # 경로 거리 결과 그래프
+    # average trajectory distance graph
     algorithm_names = list(distance_results.keys())
     dists = list(distance_results.values())
     ax3.barh(algorithm_names, dists, color='purple')
@@ -258,7 +257,7 @@ def main():
     ax3.set_title(f"Algorithm Trajectory Distance Comparison ({num_trajectories} Runs)")
     ax3.grid(True)
 
-    # 결과를 하나의 txt 파일로 저장
+    # Save combined results to txt file
     with open(os.path.join(args.output_dir, "combined_results.txt"), "w") as f:
         f.write("Algorithm\tFail Count\tAverage Execution Time (seconds)\tAverage Trajectory Distance (m)\n")
         for name in fail_counts.keys():
