@@ -1,55 +1,10 @@
-# ADLAB-PLANNING
+# InfoFusion Controller: Informed TRRT Star with Mutual Information based on Fusion of Pure Pursuit and MPC for Enhanced Path Planning
 
-## Code Structure
-```
-ADLAB-PLANNING
-|   main.py                                     # main: Multiple planning, control algorithms available
-|   utils.py                                    # utils: calculate, tranform, ...
-│   test.sh                                     # test: test shell scripts
-|
-├── conf
-│       map_custom.json                         # conf: complex rectangle road
-│       map_easy.json                           # conf: Re-imple map_easy in informed TRRT Star paper 
-│       map_hard.json                           # conf: Re-imple map_hard in informed TRRT Star paper 
-│       map_medium.json                         # conf: Re-imple map_medium in informed TRRT Star paper 
-│
-├---control
-|       adaptive_mpc_controller.py              # control: adaptive mpc controller
-|       base_controller.py                      # control: base controller
-|       info_fusion_controller.py                 # control: pure pursuit + mpc controller (mutual information)
-|       mpc_mi_controller.py                    # control: combinate multiple mpc controller (mutual information)
-|       mpc_controller.py                       # control: mpc controller
-|       mpc_parallel_controller.py              # control: mpc parallel controller
-|       multi_purpose_mpc_controller.py         # control: multi purpose mpc controller
-|       pure_pursuit_controller.py              # control: pure pursuit controller
-|       stanley_controller.py                   # control: stanley controller
-|
-├---map
-|       random_grid_map.py                      # map: random obstacle grid map
-|       fixed_grid_map.py                       # map: fixed obstacle grid map
-|       grid_map.py                             # map: base grid map
-|       parking_lot.py                          # map: parking lot grid map
-|
-├---results
-|       map_random_grid_map.png                 # results: random obstacle grid map
-|       map_fixed_grid_map.png                  # results: fixed obstacle grid map
-|       map_grid_map.png                        # results: base grid map
-|       map_parking_lot.png                     # results: parking lot grid map
-|
-├---route_planner
-|       a_star_route_planner.py                 # route planner: a star 
-|       geometry.py                             # route planner: Pose, Node Class
-|       hybrid_a_star_route_planner.py          # route planner: hybrid a star 
-|       informed_rrt_star_planner.py            # route planner: informed rrt star
-|       informed_rrt_star_smooth_planner.py     # route planner: informed rrt star (smoothing approach)
-|       informed_trrt_star_planner.py           # route planner: informed trrt star
-|       rrt_star_planner.py                     # route planner: rrt star
-|       theta_star_planner.py                   # route planner: theta star 
-|
-\---test
-        test_controller.py                      # test: controller
-        test_route_planner.py                   # test: route planner
-```
+This is the official implementation of our ICCE 2024 (Oral) paper `InfoFusion Controller: Informed TRRT Star with Mutual Information based on Fusion of Pure Pursuit and MPC for Enhanced Path Planning`.
+
+### [Project Page](https://drawingprocess.github.io/InfoFusionController) <!-- | [Paper](https://arxiv.org/abs/2112.01759) -->
+
+Abstract: *In this paper, we propose the InfoFusion Controller, an advanced path planning algorithm that integrates both global and local planning strategies to enhance autonomous driving in complex urban environments. The global planner utilizes the informed Theta-Rapidly-exploring Random Tree Star (Informed-TRRT\*) algorithm to generate an optimal reference path, while the local planner combines Model Predictive Control (MPC) and Pure Pursuit algorithms. Mutual Information (MI) is employed to fuse the outputs of the MPC and Pure Pursuit controllers, effectively balancing their strengths and compensating for their weaknesses. The proposed method addresses the challenges of navigating in dynamic environments with unpredictable obstacles by reducing uncertainty in local path planning and improving dynamic obstacle avoidance capabilities. Experimental results demonstrate that the InfoFusion Controller outperforms traditional methods in terms of safety, stability, and efficiency across various scenarios, including complex maps generated using SLAM techniques. The code for the InfoFusion Controller is available at [https://github.com/DrawingProcess/InfoFusionController](https://github.com/DrawingProcess/InfoFusionController).*
 
 ## Env Settings
 
@@ -61,4 +16,28 @@ conda activate planning
 ```shell
 export QT_QPA_PLATFORM=xcb
 export PYTHONPATH="$PYTHONPATH:$PWD"
+```
+
+## Compare Planning Algorithms
+Please check the configuration in the scripts. You can always modify it to your desired model config (especially the dataset path and input/output resolutions).
+
+### Compare Route Planning Algorithms
+```bash
+python test/test_route_planner.py
+```
+
+### Compare Controller Algorithms
+```bash
+python test/test_controller.py
+```
+
+## Citation
+If you consider our paper or code useful, please cite our paper:
+```
+@inproceedings{lee2025codebooknerf,
+  title={InfoFusion Controller: Informed TRRT Star with Mutual Information based on Fusion of Pure Pursuit and MPC for Enhanced Path Planning},
+  author={Seongjun Choi, Youngbum Kim, Nam Woo Kim, Mansun Shin, Byunggi Chae, Sungjin Lee},
+  booktitle={ICCE},
+  year={2025}
+}
 ```
