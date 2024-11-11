@@ -19,15 +19,16 @@ export QT_QPA_PLATFORM=xcb
 export PYTHONPATH="$PYTHONPATH:$PWD"
 ```
 
-## Compare Planning Algorithms
-Please check the configuration in the scripts. You can always modify it to your desired model config (especially the dataset path and input/output resolutions).
+## Compare Algorithms
 
 ### Compare Route Planning Algorithms
+**Visualize performance by comparing route planning algorithms** (the a_star, hybrid_a_star, theta_star, rrt_star, informed_rrt_star, infomed_rrt_star_smooth and **informed_trrt_star**)
 ```bash
 python test/test_route_planner.py
 ```
 
 ### Compare Controller Algorithms
+**Visualize performance by comparing controller algorithms** (the pure_pursuit, mpc, adaptive_mpc, weighted_fusion, **info_fusion**)
 ```bash
 python test/test_controller.py
 ```
