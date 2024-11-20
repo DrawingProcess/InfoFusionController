@@ -173,11 +173,13 @@
           <img src="./static/images/fig_architecture.png" alt="Pipeline of InfoFusionController" width="100%">
           <p>
             <b>Pipeline of InfoFusionController:</b>
-            (a) Given unordered images of a static scene disturbed by transient distractors as input, we first obtain two types of heuristics.
-            (b) SfM-based heuristics use SfM to distinguish between static (<span style="color:rgb(0,171,79)">green</span>) and transient features (<span style="color:rgb(255,46,23)">red</span>).
-            The static features are then employed as point prompts to generate dense masks using SAM. 
-            (c) Residual-based heuristics are based on a partially trained NeRF (ie, trained for several thousands of iterations) that can provide reasonable color residuals. 
-            (d) Their combination finally guides SAM again to generate (e) the static map for each input image.
+            (a) Controller (Step k-1): The vehicle's position at the previous time step ( x<sub>k-1</sub>) is determined and passed to the environment.
+            (b) Environment (Observation): The environment provides observation data ( Z <sub>k</sub> ) such as obstacles and road conditions.
+            (c) Global Planning (Informed TRRT):* The Informed TRRT* algorithm generates a global reference path ( T<sub>ref</sub>) based on the observations and current state.
+            (d) Local Planning (Pure Pursuit): The Pure Pursuit algorithm steers the vehicle toward a point on the reference path ( T<sub>ref</sub>).
+            (e) Local Planning (MPC): The MPC algorithm predicts optimal control inputs to follow the reference path over a dynamic horizon.
+            (g) Synchronization (Mutual Information): Mutual Information (MI) combines state predictions from Pure Pursuit ( S<sub>k</sub><sup>P</sup> ) and MPC ( S<sub>k</sub><sup>M</sup> ) to select the best path.
+            (h) Controller (Step k+1): The system executes the selected path, moving the vehicle to the next position ( x<sub>k+1</sub> ).
           </p>
           <br>
         </div>
