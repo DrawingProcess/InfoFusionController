@@ -191,37 +191,39 @@
 
     <div class="columns is-centered">
 
-      <!-- Visual Effects. -->
+      <!-- Obstacle Avoidance. -->
       <div class="column">
         <div class="content">
           <h2 class="title is-3">Obstacle Avoidance</h2>
           <img src="./static/images/analysis/fig_compare_avoidance.png" alt="fig_compare_avoidance" width="100%">
           <p>
-            Using <i>nerfies</i> you can create fun visual effects. This Dolly zoom effect
-            would be impossible without nerfies since it would require going through a wall.
+            In the left trajectory plot, <b>InfoFusion</b> demonstrates stable obstacle avoidance compared to other algorithms.
+            While <b>adaptive MPC</b> and <b>MPC basic</b> show slight path distortions, 
+            and <b>Pure Pursuit</b> makes abrupt turns when navigating around dynamic objects, InfoFusion navigates smoothly with minimal deviation from the optimal path.
+            This indicates that <b>the InfoFusion controller</b> maintains both safety and stability even when dynamic obstacles are introduced.
           </p>
         </div>
       </div>
-      <!--/ Visual Effects. -->
+      <!--/ Obstacle Avoidance. -->
 
-      <!-- Matting. -->
+      <!-- Driving Safety. -->
       <div class="column">
         <h2 class="title is-3">Driving Safety</h2>
         <div class="columns is-centered">
           <div class="column content">
             <img src="./static/images/analysis/fig_compare_safety.png" alt="fig_compare_safety" width="100%">
             <p>
-              In the left trajectory plot, InfoFusion demonstrates stable obstacle avoidance compared to other algorithms.
-              While adaptive MPC and MPC basic show slight path distortions, 
-              and Pure Pursuit makes abrupt turns when navigating around dynamic objects, InfoFusion navigates smoothly with minimal deviation from the optimal path.
-              This indicates that the InfoFusion controller maintains both safety and stability even when dynamic obstacles are introduced.
+              In order to compare the safety of the algorithms, we were conducted in <b>map_medium</b> with a lot of cornering.
+              <b>MPC</b> frequently oscillates back and forth excessively. This pattern can lead to unnecessary speed changes, reducing stability during driving.
+              On the other hand, <b>pure_pursuit</b> shows more stable acceleration without significant fluctuations, but it has a tendency to overly reduce speed before cornering.
+              In contrast, the <b>info_fusion</b> algorithm demonstrates a more consistent pattern compared to MPC.
             </p>
           </div>
 
         </div>
       </div>
     </div>
-    <!--/ Matting. -->
+    <!--/ Driving Safety. -->
   </div>
 </section>
 
