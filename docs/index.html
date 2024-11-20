@@ -194,32 +194,28 @@
       <!-- Visual Effects. -->
       <div class="column">
         <div class="content">
-          <h2 class="title is-3">Visual Effects</h2>
+          <h2 class="title is-3">Obstacle Avoidance</h2>
+          <img src="./static/images/analysis/fig_compare_avoidance.png" alt="fig_compare_avoidance" width="100%">
           <p>
             Using <i>nerfies</i> you can create fun visual effects. This Dolly zoom effect
             would be impossible without nerfies since it would require going through a wall.
           </p>
-          <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
-            <source src="./static/videos/dollyzoom-stacked.mp4"
-                    type="video/mp4">
-          </video>
         </div>
       </div>
       <!--/ Visual Effects. -->
 
       <!-- Matting. -->
       <div class="column">
-        <h2 class="title is-3">Matting</h2>
+        <h2 class="title is-3">Driving Safety</h2>
         <div class="columns is-centered">
           <div class="column content">
+            <img src="./static/images/analysis/fig_compare_safety.png" alt="fig_compare_safety" width="100%">
             <p>
-              As a byproduct of our method, we can also solve the matting problem by ignoring
-              samples that fall outside of a bounding box during rendering.
+              In the left trajectory plot, InfoFusion demonstrates stable obstacle avoidance compared to other algorithms.
+              While adaptive MPC and MPC basic show slight path distortions, 
+              and Pure Pursuit makes abrupt turns when navigating around dynamic objects, InfoFusion navigates smoothly with minimal deviation from the optimal path.
+              This indicates that the InfoFusion controller maintains both safety and stability even when dynamic obstacles are introduced.
             </p>
-            <video id="matting-video" controls playsinline height="100%">
-              <source src="./static/videos/matting.mp4"
-                      type="video/mp4">
-            </video>
           </div>
 
         </div>
