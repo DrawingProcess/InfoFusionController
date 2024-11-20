@@ -150,7 +150,7 @@
     </div>
     <!--/ Abstract. -->
     <!-- Paper video. -->
-    <div class="columns is-centered has-text-centered">
+    <!-- <div class="columns is-centered has-text-centered">
       <div class="column is-four-fifths">
         <h2 class="title is-3">Video</h2>
         <div class="publication-video">
@@ -158,7 +158,7 @@
                   frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
         </div>
       </div>
-    </div>
+    </div> -->
     <!--/ Paper video. -->
   </div>
 </section>
@@ -168,9 +168,9 @@
   <div class="container is-max-desktop">
     <div class="columns is-centered">
       <div class="column is-full-width">
-        <h3 class="title is-3 is-centered" style="text-align: center;">Heuristics-Guided Segmentation (HuGS)</h2>
+        <h3 class="title is-3 is-centered" style="text-align: center;">InfoFusion Controller</h2>
         <div class="content">
-          <img src="./static/images/pipeline.png" alt="HuGS Pipeline" width="100%">
+          <img src="./static/images/fig_architecture.png" alt="Pipeline of InfoFusionController" width="100%">
           <p>
             <b>Pipeline of InfoFusionController:</b>
             (a) Given unordered images of a static scene disturbed by transient distractors as input, we first obtain two types of heuristics.
@@ -180,105 +180,56 @@
             (d) Their combination finally guides SAM again to generate (e) the static map for each input image.
           </p>
           <br>
-          <p>
-            <b>Visualization:</b> Here are examples of HuGS on different scenes (datasets). More results can be found in the paper and the data.
-
-          </p>
-          <div class="video-grid-6 has-text-centered">
-            <div>(1) Input</div>
-            <div>(2) Seg. w/ SfM</div>
-            <div>(3) H<sup>SfM</sup></div>
-            <div>(4) Color Residual</div>
-            <div>(5) H<sup>CR</sup></div>
-            <div>(6) Static Map</div>
-          </div>
-          <div class="video-grid-6 has-text-centered">
-            <div><img src="./static/images/segmentation_visualization/robust_yoda_2clutter2_input.png" alt="yoda gt" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_yoda_2clutter2_sfm.png" alt="yoda sfm" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_yoda_2clutter2_sfm_mask.png" alt="yoda sfm mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_yoda_2clutter2_residual.png" alt="yoda residual" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_yoda_2clutter2_res_mask.png" alt="yoda res mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_yoda_2clutter2_final_mask.png" alt="yoda final mask" width="100%"></div>
-          </div>
-          <div class="video-grid-6 has-text-centered">
-            <div><img src="./static/images/segmentation_visualization/robust_crab_99932_input.png" alt="crab gt" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_crab_99932_sfm.png" alt="crab sfm" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_crab_99932_sfm_mask.png" alt="crab sfm mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_crab_99932_residual.png" alt="crab residual" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_crab_99932_res_mask.png" alt="crab res mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_crab_99932_final_mask.png" alt="crab final mask" width="100%"></div>
-          </div>
-          <div class="video-grid-6 has-text-centered">
-            <div><img src="./static/images/segmentation_visualization/robust_statue_IMG_4832_input.png" alt="statue gt" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_statue_IMG_4832_sfm.png" alt="statue sfm" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_statue_IMG_4832_sfm_mask.png" alt="statue sfm mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_statue_IMG_4832_residual.png" alt="statue residual" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_statue_IMG_4832_res_mask.png" alt="statue res mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_statue_IMG_4832_final_mask.png" alt="statue final mask" width="100%"></div>
-          </div>
-          <div class="video-grid-6 has-text-centered">
-            <div><img src="./static/images/segmentation_visualization/robust_andbot_IMG_2025_input.png" alt="andbot gt" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_andbot_IMG_2025_sfm.png" alt="andbot sfm" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_andbot_IMG_2025_sfm_mask.png" alt="andbot sfm mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_andbot_IMG_2025_residual.png" alt="andbot residual" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_andbot_IMG_2025_res_mask.png" alt="andbot res mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/robust_andbot_IMG_2025_final_mask.png" alt="andbot final mask" width="100%"></div>
-          </div>
-          <div class="video-grid-6 has-text-centered">
-            <div><img src="./static/images/segmentation_visualization/kubric_pillow_rgba_00021_input.png" alt="pillow gt" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/kubric_pillow_rgba_00021_sfm.png" alt="pillow sfm" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/kubric_pillow_rgba_00021_sfm_mask.png" alt="pillow sfm mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/kubric_pillow_rgba_00021_residual.png" alt="pillow residual" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/kubric_pillow_rgba_00021_res_mask.png" alt="pillow res mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/kubric_pillow_rgba_00021_final_mask.png" alt="pillow final mask" width="100%"></div>
-          </div>
-          <div class="video-grid-6 has-text-centered">
-            <div><img src="./static/images/segmentation_visualization/kubric_cars_rgba_00070_input.png" alt="cars gt" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/kubric_cars_rgba_00070_sfm.png" alt="cars sfm" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/kubric_cars_rgba_00070_sfm_mask.png" alt="cars sfm mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/kubric_cars_rgba_00070_residual.png" alt="cars residual" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/kubric_cars_rgba_00070_res_mask.png" alt="cars res mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/kubric_cars_rgba_00070_final_mask.png" alt="cars final mask" width="100%"></div>
-          </div>
-          <div class="video-grid-6 has-text-centered">
-            <div><img src="./static/images/segmentation_visualization/phototourism_brandenburg_20366299_2271189237_input.png" alt="brandenburg gt" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_brandenburg_20366299_2271189237_sfm.png" alt="brandenburg sfm" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_brandenburg_20366299_2271189237_sfm_mask.png" alt="brandenburg sfm mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_brandenburg_20366299_2271189237_residual.png" alt="brandenburg residual" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_brandenburg_20366299_2271189237_res_mask.png" alt="brandenburg res mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_brandenburg_20366299_2271189237_final_mask.png" alt="brandenburg final mask" width="100%"></div>
-          </div>
-          <div class="video-grid-6 has-text-centered">
-            <div><img src="./static/images/segmentation_visualization/phototourism_sacre_20179898_3676553790_input.png" alt="sacre gt" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_sacre_20179898_3676553790_sfm.png" alt="sacre sfm" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_sacre_20179898_3676553790_sfm_mask.png" alt="sacre sfm mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_sacre_20179898_3676553790_residual.png" alt="sacre residual" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_sacre_20179898_3676553790_res_mask.png" alt="sacre res mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_sacre_20179898_3676553790_final_mask.png" alt="sacre final mask" width="100%"></div>
-          </div>
-          <div class="video-grid-6 has-text-centered">
-            <div><img src="./static/images/segmentation_visualization/phototourism_taj_61293486_6619693529_input.png" alt="taj gt" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_taj_61293486_6619693529_sfm.png" alt="taj sfm" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_taj_61293486_6619693529_sfm_mask.png" alt="taj sfm mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_taj_61293486_6619693529_residual.png" alt="taj residual" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_taj_61293486_6619693529_res_mask.png" alt="taj res mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_taj_61293486_6619693529_final_mask.png" alt="taj final mask" width="100%"></div>
-          </div>
-          <div class="video-grid-6 has-text-centered">
-            <div><img src="./static/images/segmentation_visualization/phototourism_trevi_01005006_6303451772_input.png" alt="trevi gt" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_trevi_01005006_6303451772_sfm.png" alt="trevi sfm" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_trevi_01005006_6303451772_sfm_mask.png" alt="trevi sfm mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_trevi_01005006_6303451772_residual.png" alt="trevi residual" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_trevi_01005006_6303451772_res_mask.png" alt="trevi res mask" width="100%"></div>
-            <div><img src="./static/images/segmentation_visualization/phototourism_trevi_01005006_6303451772_final_mask.png" alt="trevi final mask" width="100%"></div>
-          </div>
-          
         </div>
       </div>
     </div>
 </section>
 
 
+<section class="section">
+  <div class="container is-max-desktop">
+
+    <div class="columns is-centered">
+
+      <!-- Visual Effects. -->
+      <div class="column">
+        <div class="content">
+          <h2 class="title is-3">Visual Effects</h2>
+          <p>
+            Using <i>nerfies</i> you can create fun visual effects. This Dolly zoom effect
+            would be impossible without nerfies since it would require going through a wall.
+          </p>
+          <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/dollyzoom-stacked.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+      </div>
+      <!--/ Visual Effects. -->
+
+      <!-- Matting. -->
+      <div class="column">
+        <h2 class="title is-3">Matting</h2>
+        <div class="columns is-centered">
+          <div class="column content">
+            <p>
+              As a byproduct of our method, we can also solve the matting problem by ignoring
+              samples that fall outside of a bounding box during rendering.
+            </p>
+            <video id="matting-video" controls playsinline height="100%">
+              <source src="./static/videos/matting.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <!--/ Matting. -->
+  </div>
+</section>
+
+<!-- 
 <section class="section">
   <div class="container is-max-desktop">
     <div class="columns is-centered">
@@ -480,7 +431,7 @@
         </div>
       </div>
     </div>
-</section>
+</section> -->
 
 
 <section class="section" id="BibTeX">
