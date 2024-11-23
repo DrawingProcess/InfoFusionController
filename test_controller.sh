@@ -18,7 +18,7 @@ for file in "${files[@]}"; do
         mkdir -p "$output_dir"
 
         # Run the Python script with the specified configuration and output directory
-        run="python $file --conf $config --output_dir $output_dir"
+        run="python $file --show_process --conf $config --output_dir $output_dir"
         if [ $config_name == "map_easy_dynamic" ]; then
             $run --dynamic
         elif [ $config_name == "map_slam" ]; then

@@ -152,8 +152,8 @@ def main():
     wheelbase = 2.5  # Example wheelbase of the vehicle in meters
     goal_position = [goal_pose.x, goal_pose.y]
     algorithms = {
-        'adaptive_mpc': lambda: AdaptiveMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
-            .follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
+        # 'adaptive_mpc': lambda: AdaptiveMPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
+        #     .follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
         'mpc_basic': lambda: MPCController(horizon=horizon, dt=dt, wheelbase=wheelbase, map_instance=map_instance)
             .follow_trajectory(start_pose, ref_trajectory, goal_position, show_process=show_process),
         'pure_pursuit': lambda: PurePursuitController(lookahead_distance=5.0, dt=dt, wheelbase=wheelbase, map_instance=map_instance)

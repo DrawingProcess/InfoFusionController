@@ -168,35 +168,85 @@
   <div class="container is-max-desktop">
     <div class="columns is-centered">
       <div class="column is-full-width">
-        <h3 class="title is-3 is-centered" style="text-align: center;">InfoFusion Controller</h2>
+        <h3 class="title is-3 is-centered" style="text-align: center;">InfoFusion Controller</h3>
         <div class="content">
           <img src="./static/images/fig_architecture.png" alt="Pipeline of InfoFusionController" width="100%">
           <p>
             <b>Pipeline of InfoFusionController:</b>
-            (a) Controller (Step k-1): The vehicle's position at the previous time step ( x<sub>k-1</sub>) is determined and passed to the environment.
-            (b) Environment (Observation): The environment provides observation data ( Z <sub>k</sub> ) such as obstacles and road conditions.
-            (c) Global Planning (Informed TRRT):* The Informed TRRT* algorithm generates a global reference path ( T<sub>ref</sub>) based on the observations and current state.
-            (d) Local Planning (Pure Pursuit): The Pure Pursuit algorithm steers the vehicle toward a point on the reference path ( T<sub>ref</sub>).
-            (e) Local Planning (MPC): The MPC algorithm predicts optimal control inputs to follow the reference path over a dynamic horizon.
-            (g) Synchronization (Mutual Information): Mutual Information (MI) combines state predictions from Pure Pursuit ( S<sub>k</sub><sup>P</sup> ) and MPC ( S<sub>k</sub><sup>M</sup> ) to select the best path.
-            (h) Controller (Step k+1): The system executes the selected path, moving the vehicle to the next position ( x<sub>k+1</sub> ).
+            <b>(a) Global Planning (Informed TRRT*):</b> The Informed TRRT* algorithm generates a global reference path ( T<sub>ref</sub>) based on the observations and current state.
+            <b>(b) Local Planning (Pure Pursuit):</b> The Pure Pursuit algorithm steers the vehicle toward a point on the reference path ( T<sub>ref</sub>).
+            <b>(c) Local Planning (MPC):</b> The MPC algorithm predicts optimal control inputs to follow the reference path over a dynamic horizon.
+            <b>(d) Synchronization (Mutual Information):</b> Mutual Information (MI) combines state predictions from Pure Pursuit ( S<sub>k</sub><sup>P</sup> ) and MPC ( S<sub>k</sub><sup>M</sup> ) to select the best path.
           </p>
-          <br>
         </div>
+      </div>
+    </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 is-centered" style="text-align: center;">Obstacle Avoidance</h2>
+
+    <div class="columns is-centered">
+
+      <!-- Pure Pursuit. -->
+      <div class="column">
+        <div class="content">
+          <h2 class="title is-4">Pure Pursuit</h2>
+          <img src="./static/images/avoidance/pure_pursuit.png" alt="fig_compare_avoidance" width="100%">
+          <p>
+            Pure Pursuit avoids obstacles by adjusting the target point along the reference path, steering towards a new point to bypass the obstacle.
+          </p>
+        </div>
+      </div>
+      <!--/ Pure Pursuit. -->
+
+      <!-- MPC. -->
+      <div class="column">
+        <h2 class="title is-4">MPC</h2>
+        <div class="columns is-centered">
+          <div class="column content">
+            <img src="./static/images/avoidance/mpc_basic.png" alt="fig_compare_safety" width="100%">
+            <p>
+              MPC predicts the vehicle's future states over a defined horizon, optimizing control inputs to avoid obstacles while adhering to dynamic constraints.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <!--/ MPC. -->
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h3 class="title is-3 is-centered" style="text-align: center;">Experimental Setup</h3>
+  
+        <img src="./static/images/map/fig_levelofmap.jpg" alt="level of map" width="100%">
+        <p>
+          <b>map_easy:</b> A simple map designed to evaluate the performance of basic path planning algorithms, based on the Informed TRRT* paper.
+          <b>map_middle:</b> A medium-difficulty map focused on testing the algorithm's ability to navigate tight corners and narrow passages, emphasizing speed and handling stability.
+          <b>map_hard:</b> A complex map generated using SLAM technology to simulate real-world environments, assessing the algorithm's efficiency and stability in challenging scenarios.
+        </p>
       </div>
     </div>
 </section>
 
 
 <section class="section">
-  <div class="container is-max-desktop">
+  <div class="container is-max-desktop"></div>
+    <h2 class="title is-3 is-centered" style="text-align: center;">Performance</h2>
 
     <div class="columns is-centered">
 
       <!-- Obstacle Avoidance. -->
       <div class="column">
         <div class="content">
-          <h2 class="title is-3">Obstacle Avoidance</h2>
+          <h2 class="title is-4">Obstacle Avoidance</h2>
           <img src="./static/images/analysis/fig_compare_avoidance.png" alt="fig_compare_avoidance" width="100%">
           <p>
             In the left trajectory plot, <b>InfoFusion</b> demonstrates stable obstacle avoidance compared to other algorithms.
@@ -210,7 +260,7 @@
 
       <!-- Driving Safety. -->
       <div class="column">
-        <h2 class="title is-3">Driving Safety</h2>
+        <h2 class="title is-4">Driving Safety</h2>
         <div class="columns is-centered">
           <div class="column content">
             <img src="./static/images/analysis/fig_compare_safety.png" alt="fig_compare_safety" width="100%">
@@ -226,6 +276,59 @@
       </div>
     </div>
     <!--/ Driving Safety. -->
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 is-centered" style="text-align: center;">Demo</h2>
+
+    <div class="columns is-centered">
+
+      <!-- Pure Pursuit. -->
+      <div class="column">
+        <div class="content">
+          <h2 class="title is-4">Pure Pursuit</h2>
+          <img src="./static/videos/pure_pursuit.gif" alt="fig_compare_avoidance" width="100%">
+          <p>
+            Pure Pursuit has a limitation in stability, often leading to abrupt changes in speed and steering, especially during sharp turns.
+          </p>
+        </div>
+      </div>
+      <!--/ Pure Pursuit. -->
+
+      <!-- MPC. -->
+      <div class="column">
+        <h2 class="title is-4">MPC</h2>
+        <div class="columns is-centered">
+          <div class="column content">
+            <img src="./static/videos/mpc_basic.gif" alt="fig_compare_safety" width="100%">
+            <p>
+              MPC, while offering precise control, frequently exhibits oscillatory behavior, impacting overall stability.
+            </p>
+          </div>
+
+        </div>
+      </div>
+      <!--/ MPC. -->
+
+      <!-- info fusion. -->
+      <div class="column">
+        <h2 class="title is-4">InfoFusion</h2>
+        <div class="columns is-centered">
+          <div class="column content">
+            <img src="./static/videos/info_fusion.gif" alt="fig_compare_safety" width="100%">
+            <p>
+              The InfoFusion Controller overcomes these challenges by fusing the strengths of both approaches, 
+              ensuring smoother speed transitions and consistent handling for enhanced stability.
+            </p>
+          </div>
+
+        </div>
+      </div>
+      <!--/ info fusion. -->
+    </div>
   </div>
 </section>
 

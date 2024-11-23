@@ -24,11 +24,19 @@ export PYTHONPATH="$PYTHONPATH:$PWD"
 ### Compare Route Planning Algorithms
 **Visualize performance by comparing route planning algorithms** (the a_star, hybrid_a_star, theta_star, rrt_star, informed_rrt_star, infomed_rrt_star_smooth and **informed_trrt_star**)
 ```bash
+./test_route_planner.sh
+```
+or
+```bash
 python test/test_route_planner.py
 ```
 
 ### Compare Controller Algorithms
 **Visualize performance by comparing controller algorithms** (the pure_pursuit, mpc, adaptive_mpc, weighted_fusion, **info_fusion**)
+```bash
+./test_controller.sh
+```
+or
 ```bash
 python test/test_controller.py
 ```
